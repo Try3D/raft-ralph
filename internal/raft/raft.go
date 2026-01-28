@@ -523,39 +523,30 @@ func (n *Node) handleAppendEntriesResponse(msg Message) {
 		n.MatchIndex[msg.From] = n.NextIndex[msg.From] - 1
 		n.NextIndex[msg.From] = n.MatchIndex[msg.From] + 1
 
-		// Attempt to advance commit index based on majority rule
-		// Only entries from the current term can be committed
-		// Find the highest index that has been replicated on majority of servers
 		newCommitIndex := n.CommitIndex
 		for i := n.CommitIndex + 1; i <= len(n.Log)-1; i++ {
 			if n.Log[i].Term != n.CurrentTerm {
-				// Only entries from current term can be committed using the majority rule
 				continue
 			}
 
-			// Count how many servers (including leader) have replicated this entry
-			replicatedCount := 1 // Leader has this entry
+			replicatedCount := 1
 			for j := 0; j < n.ClusterSize; j++ {
 				if j == n.ID {
-					continue // Skip leader
+					continue
 				}
 				if n.MatchIndex[j] >= i {
 					replicatedCount++
 				}
 			}
 
-			// If majority have replicated this entry, we can commit it
 			majority := n.ClusterSize/2 + 1
 			if replicatedCount >= majority {
 				newCommitIndex = i
 			} else {
-				// Since entries are ordered by index, if this one isn't replicated on majority,
-				// higher-indexed ones won't be either
 				break
 			}
 		}
 
-		// Update commit index if we found a higher one
 		if newCommitIndex > n.CommitIndex {
 			n.CommitIndex = newCommitIndex
 		}
