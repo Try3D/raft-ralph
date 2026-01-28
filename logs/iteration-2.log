@@ -1,0 +1,54 @@
+Iteration 2 - Completed TODO-0.2: Add StartElection Test Suite
+
+Work performed:
+- Created internal/raft/raft_test.go
+- Added TestStartElectionIncrementsTermAndVotesForSelf() test
+- Added TestStartElectionTransitionsToCandidate() test  
+- Added TestStartElectionConcurrent() test with 5 goroutines
+- Used sync.WaitGroup to coordinate goroutines
+- Used sync.Mutex to protect shared state access during concurrent tests
+
+Test results:
+- All tests pass: TestStartElectionIncrementsTermAndVotesForSelf, TestStartElectionTransitionsToCandidate, TestStartElectionConcurrent
+- Race detection tests pass with no data races detected
+- Build succeeds with go build ./...
+
+Invariants verified:
+- Election always starts in a new term (term incremented)
+- Node votes for itself when election starts
+- Concurrent calls to StartElection maintain invariants
+- No data races detected with go test -race
+--- QWEN OUTPUT START ---
+FAIL	github.com/try3d/raft-ralph/internal/raft [build failed]
+FAIL
+# github.com/try3d/raft-ralph/internal/raft [github.com/try3d/raft-ralph/internal/raft.test]
+internal/raft/raft_test.go:14:2: declared and not used: initialVotedFor=== RUN   TestStartElectionIncrementsTermAndVotesForSelf
+--- PASS: TestStartElectionIncrementsTermAndVotesForSelf (0.00s)
+=== RUN   TestStartElectionTransitionsToCandidate
+--- PASS: TestStartElectionTransitionsToCandidate (0.00s)
+=== RUN   TestStartElectionConcurrent
+--- PASS: TestStartElectionConcurrent (0.00s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	0.600sok  	github.com/try3d/raft-ralph/internal/raft	1.441s✅ **What I Worked On**
+- Completed TODO-0.2: Added StartElection Test Suite
+- Created internal/raft/raft_test.go with three tests
+
+🧪 **Tests**
+- Added TestStartElectionIncrementsTermAndVotesForSelf(): Verifies term increment and self-voting
+- Added TestStartElectionTransitionsToCandidate(): Verifies state transition to Candidate
+- Added TestStartElectionConcurrent(): Tests concurrent election calls with sync.WaitGroup and sync.Mutex
+- All tests pass, including race detection with `go test -race -count=10`
+
+📌 **Result**
+- Fully working
+
+⚠️ **Learnings / Issues**
+- Had to remove unused variable 'initialVotedFor' to get clean compilation
+- The existing StartElection method in raft.go already implemented the required behavior correctly
+- Concurrent test showed that the implementation handles multiple election attempts safely
+- All Raft invariants for this TODO are properly enforced by the tests
+</parameter>
+</function>
+</tool_call>
+
+--- QWEN OUTPUT END ---

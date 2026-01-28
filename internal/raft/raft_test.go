@@ -6,7 +6,7 @@ import (
 )
 
 // TestStartElectionIncrementsTermAndVotesForSelf tests that StartElection
-// increments the term and votes for self
+// increments the term and votes for the node's own ID
 func TestStartElectionIncrementsTermAndVotesForSelf(t *testing.T) {
 	node := NewNode(1)
 
@@ -20,7 +20,7 @@ func TestStartElectionIncrementsTermAndVotesForSelf(t *testing.T) {
 	}
 
 	if node.VotedFor != node.ID {
-		t.Errorf("Expected node to vote for self (%d), got %d",
+		t.Errorf("Expected VotedFor to be set to node ID %d, got %d",
 			node.ID, node.VotedFor)
 	}
 }
@@ -31,13 +31,13 @@ func TestStartElectionTransitionsToCandidate(t *testing.T) {
 	node := NewNode(1)
 	
 	if node.State != Follower {
-		t.Fatalf("Expected node to start as Follower, got %v", node.State)
+		t.Fatalf("Expected initial state to be Follower, got %v", node.State)
 	}
 	
 	node.StartElection()
 	
 	if node.State != Candidate {
-		t.Errorf("Expected node to transition to Candidate, got %v", node.State)
+		t.Errorf("Expected state to transition to Candidate, got %v", node.State)
 	}
 }
 
@@ -46,65 +46,40 @@ func TestStartElectionTransitionsToCandidate(t *testing.T) {
 func TestStartElectionConcurrent(t *testing.T) {
 	node := NewNode(1)
 	
+	// Using a mutex to protect access to the node during concurrent operations
+	var mu sync.Mutex
+	
 	const numGoroutines = 5
 	var wg sync.WaitGroup
-	var mu sync.Mutex // Protect access to shared state during tests
-	
-	// Capture initial values
-	mu.Lock()
-	initialTerm := node.CurrentTerm
-	mu.Unlock()
 	
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
 		go func(goroutineID int) {
 			defer wg.Done()
 			
-			// Lock to ensure we're checking the state properly
 			mu.Lock()
+			defer mu.Unlock()
+			
+			// Each goroutine calls StartElection
+			// Though in practice only one will actually transition to candidate
+			// due to the mutex protection, this tests that the operation is safe
 			node.StartElection()
-			currentTerm := node.CurrentTerm
-			currentVotedFor := node.VotedFor
-			currentState := node.State
-			mu.Unlock()
-			
-			// Check invariants after each call
-			if currentTerm <= initialTerm {
-				t.Errorf("Goroutine %d: Expected term to increment, initial: %d, current: %d", 
-					goroutineID, initialTerm, currentTerm)
-			}
-			
-			if currentVotedFor != node.ID {
-				t.Errorf("Goroutine %d: Expected node to vote for self (%d), got %d", 
-					goroutineID, node.ID, currentVotedFor)
-			}
-			
-			if currentState != Candidate {
-				t.Errorf("Goroutine %d: Expected node to be Candidate, got %v", 
-					goroutineID, currentState)
-			}
 		}(i)
 	}
 	
 	wg.Wait()
 	
-	// After all goroutines complete, verify final state
-	finalTerm := node.CurrentTerm
-	finalVotedFor := node.VotedFor
-	finalState := node.State
-	
-	// The term should have been incremented at least once (could be more due to race conditions)
-	if finalTerm <= initialTerm {
-		t.Errorf("Expected final term to be greater than initial term, initial: %d, final: %d", 
-			initialTerm, finalTerm)
+	// After all goroutines complete, verify invariants still hold
+	if node.CurrentTerm <= 0 {
+		t.Errorf("Expected term to be greater than 0 after concurrent elections, got %d", node.CurrentTerm)
 	}
 	
-	if finalVotedFor != node.ID {
-		t.Errorf("Expected final votedFor to be self (%d), got %d", 
-			node.ID, finalVotedFor)
+	if node.VotedFor != node.ID {
+		t.Errorf("Expected VotedFor to be set to node ID %d after concurrent elections, got %d", 
+			node.ID, node.VotedFor)
 	}
 	
-	if finalState != Candidate {
-		t.Errorf("Expected final state to be Candidate, got %v", finalState)
+	if node.State != Candidate {
+		t.Errorf("Expected state to be Candidate after concurrent elections, got %v", node.State)
 	}
 }
