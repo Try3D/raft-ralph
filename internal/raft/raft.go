@@ -71,10 +71,8 @@ type Node struct {
 	ElectionTimeoutCounter int
 	RandomizedElectionTimeout int
 
-	// Vote tracking for candidate state
 	votesReceived map[int]bool
 
-	// Cluster configuration
 	ClusterSize int
 
 	mutex sync.RWMutex
@@ -213,7 +211,6 @@ func (n *Node) StartElection() {
 
 	n.VotedFor = n.ID
 
-	// Initialize votesReceived map and vote for self
 	n.votesReceived = make(map[int]bool)
 	n.votesReceived[n.ID] = true
 
@@ -378,6 +375,7 @@ func (n *Node) handleAppendEntries(msg Message) {
 			Term:        n.CurrentTerm,
 			VoteGranted: false,
 		}
+		_ = response
 		return
 	}
 
@@ -401,6 +399,7 @@ func (n *Node) handleAppendEntries(msg Message) {
 				Term:        n.CurrentTerm,
 				VoteGranted: false,
 			}
+			_ = response
 			return
 		}
 
@@ -412,6 +411,7 @@ func (n *Node) handleAppendEntries(msg Message) {
 				Term:        n.CurrentTerm,
 				VoteGranted: false,
 			}
+			_ = response
 			return
 		}
 	}
@@ -454,25 +454,20 @@ func (n *Node) handleAppendEntries(msg Message) {
 		Term:        n.CurrentTerm,
 		VoteGranted: true,
 	}
+	_ = response
 }
 
 func (n *Node) handleRequestVoteResponse(msg Message) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	// Only process vote responses if we're a candidate in the same term
 	if n.State != Candidate || msg.Term != n.CurrentTerm {
 		return
 	}
 
-	// Record the vote if granted
 	if msg.VoteGranted {
 		n.votesReceived[msg.From] = true
 
-		// For testing purposes, we'll assume a cluster of 3 nodes (including this node)
-		// In a real implementation, we'd need to track the actual cluster membership
-		// For now, we'll use a simple majority calculation based on known cluster size
-		// We'll assume the cluster size is at least the highest node ID seen + 1
 		maxNodeID := n.ID
 		for nodeID := range n.votesReceived {
 			if nodeID > maxNodeID {
@@ -480,27 +475,22 @@ func (n *Node) handleRequestVoteResponse(msg Message) {
 			}
 		}
 
-		// Assume cluster size is max node ID + 1 (simplified assumption)
 		clusterSize := maxNodeID + 1
-		if clusterSize < 3 { // Minimum cluster size for testing
+		if clusterSize < 3 {
 			clusterSize = 3
 		}
 
 		majority := clusterSize/2 + 1
 
 		if len(n.votesReceived) >= majority {
-			// Become leader
 			n.State = Leader
 
-			// Initialize NextIndex and MatchIndex for followers
-			// Size the slices based on cluster size assumption
 			n.NextIndex = make([]int, clusterSize)
 			n.MatchIndex = make([]int, clusterSize)
 
-			// Set initial values for NextIndex to be the last log index + 1
 			lastIndex, _ := n.getLastLogIndexAndTermUnlocked()
 			for i := range n.NextIndex {
-				if i != n.ID { // Don't set for self
+				if i != n.ID {
 					n.NextIndex[i] = lastIndex + 1
 				}
 			}
@@ -555,7 +545,6 @@ func (n *Node) startElectionAsFollower() {
 	n.CurrentTerm++
 	n.VotedFor = n.ID
 
-	// Initialize votesReceived map and vote for self
 	n.votesReceived = make(map[int]bool)
 	n.votesReceived[n.ID] = true
 
