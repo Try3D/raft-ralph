@@ -40,29 +40,24 @@ func (fs *FileStorage) SaveVote(ctx context.Context, term, votedFor int) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	// Create the vote data
 	voteData := VoteData{
 		Term:     term,
 		VotedFor: votedFor,
 	}
 
-	// Marshal to JSON
 	data, err := json.Marshal(voteData)
 	if err != nil {
 		return fmt.Errorf("failed to marshal vote data: %w", err)
 	}
 
-	// Calculate checksum
 	checksum := crc32.ChecksumIEEE(data)
 	voteData.Checksum = checksum
 
-	// Marshal again with checksum
 	data, err = json.Marshal(voteData)
 	if err != nil {
 		return fmt.Errorf("failed to marshal vote data with checksum: %w", err)
 	}
 
-	// Write atomically to a temporary file
 	tempPath := fs.path + ".tmp"
 	file, err := os.OpenFile(tempPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -75,7 +70,6 @@ func (fs *FileStorage) SaveVote(ctx context.Context, term, votedFor int) error {
 		return fmt.Errorf("failed to write to temp file: %w", err)
 	}
 
-	// Sync to disk for durability
 	err = file.Sync()
 	if err != nil {
 		file.Close()
@@ -87,13 +81,11 @@ func (fs *FileStorage) SaveVote(ctx context.Context, term, votedFor int) error {
 		return fmt.Errorf("failed to close temp file: %w", err)
 	}
 
-	// Atomic rename
 	err = os.Rename(tempPath, fs.path)
 	if err != nil {
 		return fmt.Errorf("failed to rename temp file: %w", err)
 	}
 
-	// Sync parent directory to ensure the rename is persisted
 	dirFile, err := os.Open(filepath.Dir(fs.path))
 	if err != nil {
 		return fmt.Errorf("failed to open directory: %w", err)
@@ -115,7 +107,6 @@ func (fs *FileStorage) LoadVote(ctx context.Context) (int, int, error) {
 	data, err := os.ReadFile(fs.path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Return default values if file doesn't exist
 			return 0, -1, nil
 		}
 		return 0, 0, fmt.Errorf("failed to read vote file: %w", err)
@@ -127,8 +118,6 @@ func (fs *FileStorage) LoadVote(ctx context.Context) (int, int, error) {
 		return 0, 0, fmt.Errorf("failed to unmarshal vote data: %w", err)
 	}
 
-	// Recalculate checksum to verify integrity
-	// We need to unmarshal without the checksum first, then calculate
 	tempData := VoteData{
 		Term:     voteData.Term,
 		VotedFor: voteData.VotedFor,

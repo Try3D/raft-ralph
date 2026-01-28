@@ -298,12 +298,10 @@ func (n *Node) AppendEntry(entry LogEntry) bool {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	// Ensure the entry has the correct term
 	if entry.Term != n.CurrentTerm {
 		return false
 	}
 
-	// For appending to our own log, the index should be the next available index
 	nextIndex := len(n.Log)
 	entry.Index = nextIndex
 
