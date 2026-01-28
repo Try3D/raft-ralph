@@ -70,3 +70,8 @@ I can see that the log entry tests (TODO-1.1) are also already implemented. Let 
 [2026-01-28T11:50:10.933116] 🔴 Agent experienced abrupt exit
 [2026-01-28T11:50:10.933275] 🔴 It happened. It fucked up.
 [2026-01-28T11:50:10.933376] ⏱️  Attempting recovery: committing current state...
+[2026-01-28T11:50:10.984254] ✅ Git add SUCCESS
+[2026-01-28T11:50:11.068865] ✅ Git commit SUCCESS
+[2026-01-28T11:50:12.783566] ✅ Git push SUCCESS
+[2026-01-28T11:50:12.784044] ✅ Iteration 15 complete - committed and pushed
+[2026-01-28T11:50:12.784182] ✅ Recovery successful - continuing to next iteration
