@@ -5,17 +5,14 @@ import (
 	"testing"
 )
 
-// TestTermNeverDecreases tests that currentTerm never decreases
 func TestTermNeverDecreases(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 
-	// Start with term 0
 	initialTerm := node.CurrentTerm
 	if initialTerm != 0 {
 		t.Errorf("Expected initial term to be 0, got %d", initialTerm)
 	}
 
-	// Increment term by starting an election
 	node.StartElection()
 	termAfterElection := node.CurrentTerm
 
@@ -24,7 +21,6 @@ func TestTermNeverDecreases(t *testing.T) {
 			termAfterElection, initialTerm)
 	}
 
-	// Manually set a higher term to simulate receiving a higher-term message
 	higherTerm := termAfterElection + 5
 	node.TransitionToFollower(higherTerm)
 
@@ -33,7 +29,6 @@ func TestTermNeverDecreases(t *testing.T) {
 			higherTerm, node.CurrentTerm)
 	}
 
-	// Now try to transition to a lower term - this should not decrease the term
 	lowerTerm := higherTerm - 3
 	node.TransitionToFollower(lowerTerm)
 
@@ -43,22 +38,18 @@ func TestTermNeverDecreases(t *testing.T) {
 	}
 }
 
-// TestHigherTermForcesFollower tests that any higher term message forces follower state
 func TestHigherTermForcesFollower(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 
-	// Start as follower
 	if node.State != Follower {
 		t.Fatalf("Expected initial state to be Follower, got %v", node.State)
 	}
 
-	// Transition to candidate
 	node.StartElection()
 	if node.State != Candidate {
 		t.Fatalf("Expected state to be Candidate after election, got %v", node.State)
 	}
 
-	// Receive a message with higher term - should force follower state
 	higherTerm := node.CurrentTerm + 1
 	msg := Message{
 		Type: RequestVoteMsg,
@@ -80,14 +71,12 @@ func TestHigherTermForcesFollower(t *testing.T) {
 	}
 }
 
-// TestTermUpdateWithMessage tests that receiving higher-term message updates local term
 func TestTermUpdateWithMessage(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 
 	initialTerm := node.CurrentTerm
 	higherTerm := initialTerm + 3
 
-	// Send a message with higher term
 	msg := Message{
 		Type: AppendEntriesMsg,
 		From: 2,
@@ -102,27 +91,23 @@ func TestTermUpdateWithMessage(t *testing.T) {
 			higherTerm, node.CurrentTerm)
 	}
 
-	// Verify that the node is now a follower
 	if node.State != Follower {
 		t.Errorf("Expected node to be in Follower state after receiving higher-term message, got %v",
 			node.State)
 	}
 }
 
-// TestMultipleConcurrentMessages tests concurrent messages to verify no data races and term monotonicity
 func TestMultipleConcurrentMessages(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 
 	const numGoroutines = 10
 	var wg sync.WaitGroup
 
-	// Launch multiple goroutines that send messages with different terms
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
 		go func(goroutineID int) {
 			defer wg.Done()
 
-			// Send a message with a unique term
 			term := 10 + goroutineID
 			msg := Message{
 				Type: AppendEntriesMsg,
@@ -137,28 +122,23 @@ func TestMultipleConcurrentMessages(t *testing.T) {
 
 	wg.Wait()
 
-	// After all goroutines complete, verify that the term is the highest one sent
-	expectedHighestTerm := 10 + (numGoroutines - 1) // 10 + 9 = 19
+	expectedHighestTerm := 10 + (numGoroutines - 1)
 	if node.CurrentTerm < expectedHighestTerm {
 		t.Errorf("Expected term to be at least %d after concurrent messages, got %d",
 			expectedHighestTerm, node.CurrentTerm)
 	}
 
-	// Verify the node is still in a valid state
 	if !node.IsValidState() {
 		t.Errorf("Node is in an invalid state after concurrent messages: %v", node.State)
 	}
 }
 
-// TestLowerTermMessageDoesNotChangeTerm tests that receiving lower/equal term messages does not change term
 func TestLowerTermMessageDoesNotChangeTerm(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 
-	// Start an election to increase the term
 	node.StartElection()
 	initialTerm := node.CurrentTerm
 
-	// Send a message with lower term
 	lowerTermMsg := Message{
 		Type: RequestVoteMsg,
 		From: 2,
@@ -173,7 +153,6 @@ func TestLowerTermMessageDoesNotChangeTerm(t *testing.T) {
 			initialTerm, node.CurrentTerm)
 	}
 
-	// Send a message with equal term
 	equalTermMsg := Message{
 		Type: AppendEntriesMsg,
 		From: 3,
