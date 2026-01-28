@@ -17,3 +17,242 @@ Results:
 - Fixed data race condition in concurrent message handling
 - Maintained all existing functionality
 - Improved thread safety of the Raft implementation
+--- QWEN OUTPUT START ---
+I'll follow the Ralph Wiggum loop and work on the next TODO from TODO.md. Let me first check what the current TODOs are.
+
+Based on the TODO.md file, I can see that TODO-0.3 (Term Monotonicity Tests) is marked as completed. The next item in order is TODO-0.4: Vote Persistence Interface. Let me work on this task.
+
+First, I need to check the current files in the internal/raft directory to understand the existing code structure:
+
+Now let me check the current raft.go file to see the existing implementation:
+
+Now let me check the storage interface that's referenced in the code:
+
+Let me check the current storage implementation:
+
+Let me also check the storage test file:
+
+I notice that the Storage interface already exists in the internal/storage package. According to the TODO-0.4, I need to define the Storage interface with the methods and errors. Looking at the current implementation, it already has the required interface defined. Let me check if there are any comments in the raft.go file that need to be deleted according to the rules:
+
+Good, there are no comments in the raft.go file. Now let me check the storage.go file for comments:
+
+Perfect! The comments have already been removed. Now I need to check if there are any tests specifically for the vote persistence interface. Let me look at the vote persistence test file:
+
+Let me also check the vote persistence test file:
+
+Let me also check the other test files to get a complete picture:
+
+Now I need to check if there are any remaining tasks to complete for TODO-0.4. Looking at the requirements:
+
+- Define `Storage` interface: `SaveVote(ctx context.Context, term, votedFor int) error` and `LoadVote(ctx context.Context) (term, votedFor int, err error)`
+- Create typed errors: `ErrCorrupted`, `ErrIO`
+- Define error wrapping patterns with context
+- NO implementation yet - interface only
+
+Looking at the current implementation in `/Users/rsaran/Projects/raft/internal/storage/storage.go`, I can see that all these requirements are already met:
+
+1. The Storage interface is defined with the required methods
+2. The errors `ErrCorrupted` and `ErrIO` are defined
+3. Error wrapping patterns with context are used
+4. There's already an implementation, but the interface is properly defined
+
+However, according to the TODO-0.4, I should focus on defining the interface without implementation. But looking at the current state, the interface is already properly defined. Let me check if I need to create a test specifically for the interface definition to verify it meets all requirements:
+
+Since the interface is already defined and tested, and the tests are passing, I believe TODO-0.4 is already completed. Let me run the tests to confirm everything is working:
+
+testing: warning: no tests to run
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	0.240s [no tests to run]Let me run the correct test:
+
+=== RUN   TestStorageInterfaceDefinition
+--- PASS: TestStorageInterfaceDefinition (0.00s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	(cached)=== RUN   TestStorageErrors
+--- PASS: TestStorageErrors (0.00s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	(cached)Let me run all the vote persistence tests:
+
+=== RUN   TestVotePersistenceOnRequestVote
+--- PASS: TestVotePersistenceOnRequestVote (0.02s)
+=== RUN   TestVotePersistenceOnHigherTerm
+--- PASS: TestVotePersistenceOnHigherTerm (0.01s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	0.177sLet me run all the tests to make sure everything is working:
+
+=== RUN   TestLogAppendIncrementsIndex
+--- PASS: TestLogAppendIncrementsIndex (0.00s)
+=== RUN   TestLogTermNeverChanges
+--- PASS: TestLogTermNeverChanges (0.00s)
+=== RUN   TestLogCannotSkipIndices
+--- PASS: TestLogCannotSkipIndices (0.00s)
+=== RUN   TestConcurrentAppends
+--- PASS: TestConcurrentAppends (0.00s)
+=== RUN   TestAppendEntryWithWrongTerm
+--- PASS: TestAppendEntryWithWrongTerm (0.00s)
+=== RUN   TestStartElectionIncrementsTermAndVotesForSelf
+--- PASS: TestStartElectionIncrementsTermAndVotesForSelf (0.00s)
+=== RUN   TestStartElectionTransitionsToCandidate
+--- PASS: TestStartElectionTransitionsToCandidate (0.00s)
+=== RUN   TestStartElectionConcurrent
+--- PASS: TestStartElectionConcurrent (0.00s)
+=== RUN   TestNodeAlwaysInValidState
+--- PASS: TestNodeAlwaysInValidState (0.00s)
+=== RUN   TestStateTransitionsAreExplicit
+--- PASS: TestStateTransitionsAreExplicit (0.00s)
+=== RUN   TestVoteGrantedIfLogUpToDate
+--- PASS: TestVoteGrantedIfLogUpToDate (0.00s)
+=== RUN   TestVoteDeniedIfLogOutOfDate
+--- PASS: TestVoteDeniedIfLogOutOfDate (0.00s)
+=== RUN   TestLogComparisonByTerm
+--- PASS: TestLogComparisonByTerm (0.00s)
+=== RUN   TestConcurrentVoteComparison
+--- PASS: TestConcurrentVoteComparison (0.00s)
+=== RUN   TestTermNeverDecreases
+--- PASS: TestTermNeverDecreases (0.00s)
+=== RUN   TestHigherTermForcesFollower
+--- PASS: TestHigherTermForcesFollower (0.00s)
+=== RUN   TestTermUpdateWithMessage
+--- PASS: TestTermUpdateWithMessage (0.00s)
+=== RUN   TestMultipleConcurrentMessages
+--- PASS: TestMultipleConcurrentMessages (0.00s)
+=== RUN   TestLowerTermMessageDoesNotChangeTerm
+--- PASS: TestLowerTermMessageDoesNotChangeTerm (0.00s)
+=== RUN   TestSingleVotePerTerm
+--- PASS: TestSingleVotePerTerm (0.00s)
+=== RUN   TestVoteResetOnTermIncrease
+--- PASS: TestVoteResetOnTermIncrease (0.00s)
+=== RUN   TestVotingDifferentCandidates
+--- PASS: TestVotingDifferentCandidates (0.00s)
+=== RUN   TestConcurrentVoteRequests
+--- PASS: TestConcurrentVoteRequests (0.00s)
+=== RUN   TestVoteGrantingRules
+--- PASS: TestVoteGrantingRules (0.00s)
+=== RUN   TestStorageInterfaceDefinition
+--- PASS: TestStorageInterfaceDefinition (0.00s)
+=== RUN   TestStorageErrors
+--- PASS: TestStorageErrors (0.00s)
+=== RUN   TestVotePersistsAcrossRestart
+--- PASS: TestVotePersistsAcrossRestart (0.01s)
+=== RUN   TestVotePersistenceOnRequestVote
+--- PASS: TestVotePersistenceOnRequestVote (0.02s)
+=== RUN   TestVotePersistenceOnHigherTerm
+--- PASS: TestVotePersistenceOnHigherTerm (0.02s)
+=== RUN   TestCorruptionDetection
+--- PASS: TestCorruptionDetection (0.01s)
+=== RUN   TestAtomicWrites
+--- PASS: TestAtomicWrites (0.05s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	(cached)Let me also run the storage tests:
+
+=== RUN   TestVotePersistsAcrossRestart
+--- PASS: TestVotePersistsAcrossRestart (0.01s)
+=== RUN   TestCorruptionDetection
+--- PASS: TestCorruptionDetection (0.01s)
+=== RUN   TestAtomicWrites
+--- PASS: TestAtomicWrites (0.09s)
+=== RUN   TestSaveVote
+--- PASS: TestSaveVote (0.01s)
+=== RUN   TestLoadVoteDefaultValues
+--- PASS: TestLoadVoteDefaultValues (0.00s)
+=== RUN   TestStorageErrors
+--- PASS: TestStorageErrors (0.00s)
+=== RUN   TestConcurrentAccess
+--- PASS: TestConcurrentAccess (0.17s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/storage	(cached)Let me run the race detector to make sure there are no data races:
+
+==================
+WARNING: DATA RACE
+Write at 0x00c000116790 by goroutine 110:
+  github.com/try3d/raft-ralph/internal/raft.(*Node).Step()
+      /Users/rsaran/Projects/raft/internal/raft/raft.go:224 +0x90
+  github.com/try3d/raft-ralph/internal/raft.TestMultipleConcurrentMessages.func1()
+      /Users/rsaran/Projects/raft/internal/raft/term_monotonicity_test.go:134 +0xf8
+  github.com/try3d/raft-ralph/internal/raft.TestMultipleConcurrentMessages.gowrap1()
+      /Users/rsaran/Projects/raft/internal/raft/term_monotonicity_test.go:135 +0x40
+
+Previous read at 0x00c000116790 by goroutine 108:
+  github.com/try3d/raft-ralph/internal/raft.(*Node).handleAppendEntries()
+      /Users/rsaran/Projects/raft/internal/raft/raft.go:361 +0x2e0
+  github.com/try3d/raft-ralph/internal/raft.(*Node).Step()
+      /Users/rsaran/Projects/raft/internal/raft/raft.go:257 +0x2b0
+  github.com/try3d/raft-ralph/internal/raft.TestMultipleConcurrentMessages.func1()
+      /Users/rsaran/Projects/raft/internal/raft/term_monotonicity_test.go:134 +0xf8
+  github.com/try3d/raft-ralph/internal/raft.TestMultipleConcurrentMessages.gowrap1()
+      /Users/rsaran/Projects/raft/internal/raft/term_monotonicity_test.go:135 +0x40
+
+Goroutine 110 (running) created at:
+  github.com/try3d/raft-ralph/internal/raft.TestMultipleConcurrentMessages()
+      /Users/rsaran/Projects/raft/internal/raft/term_monotonicity_test.go:122 +0x19c
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x164
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x3c
+
+Goroutine 108 (running) created at:
+  github.com/try3d/raft-ralph/internal/raft.TestMultipleConcurrentMessages()
+      /Users/rsaran/Projects/raft/internal/raft/term_monotonicity_test.go:122 +0x19c
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x164
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x3c
+==================
+--- FAIL: TestMultipleConcurrentMessages (0.00s)
+    testing.go:1617: race detected during execution of test
+FAIL
+FAIL	github.com/try3d/raft-ralph/internal/raft	0.340s
+ok  	github.com/try3d/raft-ralph/internal/storage	2.193s
+FAILThere's a data race in the `handleAppendEntries` method. I need to fix this issue. Let me look at the problematic code:
+
+The issue is that in the `Step` method, there's a section where the mutex is unlocked temporarily to call the handlers, but then locked again later. This creates a race condition. Let me look at the Step method more closely:
+
+Let me see the rest of the Step method:
+
+I see the issue. The mutex is unlocked before calling the handler methods, and then locked again afterwards. This creates a race condition where multiple goroutines can access the node's state simultaneously. I need to fix this by ensuring the mutex remains locked during the entire operation or by restructuring the code to avoid this pattern.
+
+The problem is that the mutex is unlocked before calling the handler methods, allowing other goroutines to access the node's state concurrently. Let me fix this by keeping the mutex locked throughout the entire message handling process:
+
+Now I need to update the `handleRequestVote` method to remove the locking since it's already handled in the Step method:
+
+I also need to update the `handleRequestVoteWithLogInfo` method since it's no longer being used but was called from the Step method before:
+
+Let me see the `handleRequestVoteWithLogInfo` method:
+
+Let me see the rest of this method:
+
+Since I updated the Step method to call `handleRequestVote` instead of `handleRequestVoteWithLogInfo`, I need to update the logic in `handleRequestVote` to compute the log info internally. Let me update it:
+
+The method is already correct. Now let me run the race detection test again to see if the issue is fixed:
+
+ok  	github.com/try3d/raft-ralph/internal/raft	2.043s
+ok  	github.com/try3d/raft-ralph/internal/storage	1.971sGreat! The race condition has been fixed. Now let me run all tests to make sure everything is working properly:
+
+ok  	github.com/try3d/raft-ralph/internal/raft	0.978s
+ok  	github.com/try3d/raft-ralph/internal/storage	0.776sPerfect! Now let me create an iteration log for this work:
+
+Now let me commit the changes:
+
+[master 7263bf5] iteration-2: Fix race condition in Step method for concurrent message handling
+ 3 files changed, 20 insertions(+), 44 deletions(-)To https://github.com/Try3D/raft-ralph.git
+   38fb8e6..7263bf5  master -> master✅ **What I Worked On**
+- Fixed race condition in the Step method that was causing data races when handling concurrent messages
+- Updated the Step method to keep the mutex locked throughout the entire message handling process
+- Worked on files: internal/raft/raft.go
+
+🧪 **Tests**
+- All existing tests continue to pass
+- Race detection test now passes without data race warnings
+- Concurrent message handling tests pass with `go test -race -count=2`
+
+📌 **Result**
+- Fixed data race condition in concurrent message handling
+- Maintained all existing functionality
+- Improved thread safety of the Raft implementation
+- Fully working
+
+⚠️ **Learnings / Issues**
+- The original implementation had a race condition where the mutex was unlocked before calling handler methods and then locked again, creating a window for concurrent access
+- The fix involved restructuring the Step method to maintain lock throughout the operation
+- This change improved the thread safety of the Raft implementation significantly
+
+--- QWEN OUTPUT END ---
