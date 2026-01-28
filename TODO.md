@@ -18,63 +18,67 @@ For each TODO:
 - Do not advance unless correctness is verified
 - Each TODO is intentionally small.
 - Run robust testing after each implementation to ensure functionality
-- Append testing conclusions and outcomes to the relevant test files
+- Test files MUST be in `internal/raft/` package (e.g., `internal/raft/raft_test.go`)
+- Use concurrent goroutines extensively to simulate multiple clients and nodes
 
-## Phase 0: Foundations & Scaffolding
+## Phase 0: Foundations & Project Layout
 
-### TODO-0.1: Standard Project Layout
-- Refactor project structure to follow Go standards:
-  - `internal/raft`: Core library code.
-  - `cmd/raft-server`: Main entry point.
-- Ensure strict linting is possible.
-
-**Invariant:**
-- Project layout is clean and extensible.
-- Code compiles in new structure.
-
-### TODO-0.2: Storage Interface Definition
-- Define `Storage` interface in `internal/raft`.
-- Methods for HardState (Term, Vote) and Log.
-- Define typed errors for storage failures.
+### TODO-0.1: Verify Project Compiles
+- Ensure `go build ./...` succeeds
+- Ensure `go test ./...` compiles (even if no tests exist yet)
 
 **Invariant:**
-- Persistence logic is decoupled from consensus logic.
+- Code compiles with no errors
+- No unused imports or variables
 
-### TODO-0.3: Deterministic Step Function
-- Introduce `Node` struct and `Step` method in `internal/raft`.
+### TODO-0.2: Add StartElection Test Suite
+- Create `internal/raft/raft_test.go`
+- Add test `TestStartElectionIncrementsTermAndVotesForSelf()`
+- Add test `TestStartElectionTransitionsToCandidate()`
+- Add concurrent test spawning 5 goroutines calling StartElection simultaneously
+- Use `sync.WaitGroup` to coordinate goroutines
+- Use `sync.Mutex` to protect shared state access during concurrent tests
 
 **Invariant:**
-- All state changes go through Step.
-- No goroutines yet.
-- No time yet.
+- Election always starts in a new term (term incremented)
+- Node votes for itself when election starts
+- Concurrent calls to StartElection maintain invariants
+- No data races detected with `go test -race`
+
+### TODO-0.3: Implement StartElection Method (if not exists)
+- Verify `StartElection()` exists in `internal/raft/raft.go`
+- Increments term by exactly 1
+- Sets VotedFor to node's own ID
+- Transitions to Candidate state
+
+**Invariant:**
+- StartElection increments term exactly once
+- Previous vote is cleared when entering new term
+- Node always becomes candidate when election starts
 
 ## Phase 1: Robust Persistence & Safety
 
-### TODO-1.1: Robust File-Based Storage
-- Implement `Storage` using a safe file format (e.g., WAL or atomic page writes).
-- MUST use `fsync` to ensure durability.
-- MUST handle partial writes/corruption (CRC checks).
-- Place implementation in `internal/storage`.
+### TODO-1.1: Robust File-Based Storage Interface
+- Define `Storage` interface in `internal/storage/storage.go`
+- Methods: `SaveHardState(ctx context.Context, term int, votedFor int) error`
+- Methods: `LoadHardState(ctx context.Context) (term int, votedFor int, err error)`
+- Typed errors: `ErrCorrupted`, `ErrIO`
 
 **Invariant:**
-- Data is durable after write returns.
-- Corruption is detected on load.
+- Storage interface decouples persistence from logic
+- All storage ops accept context.Context
 
-### TODO-1.2: Term Monotonicity
-- Wired up to Storage.
-- currentTerm never decreases.
-- Persist term changes synchronously.
-
-**Invariant:**
-- Restarted node recovers term.
-- Lower-term messages ignored.
-
-### TODO-1.3: Single Vote Per Term
-- Persist `votedFor` synchronously before responding.
+### TODO-1.2: File-Based Storage Implementation
+- Implement Storage using WAL or atomic writes
+- MUST use `fsync` for durability
+- MUST detect corruption (CRC32 checksums)
+- Handle partial writes gracefully
 
 **Invariant:**
-- Node votes at most once per term.
-- Vote survives crash.
+- Data is durable after write returns
+- Corruption detected on load
+- No data loss on crashes
+
 
 ## Phase 2: Raft State Transitions
 
