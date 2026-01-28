@@ -243,7 +243,6 @@ func (n *Node) handleRequestVoteResponse(msg Message) {
 func (n *Node) handleAppendEntriesResponse(msg Message) {
 }
 
-// MockStorage implements the storage.Storage interface for testing
 type MockStorage struct{}
 
 func (m *MockStorage) SaveVote(ctx context.Context, term, votedFor int) error {
