@@ -92,11 +92,11 @@ func TestConcurrentTicksFromMultipleNodes(t *testing.T) {
 	
 	for i := 0; i < numNodes; i++ {
 		go func(node *Node, idx int) {
-					for j := 0; j < 10; j++ {
+			for j := 0; j < 10; j++ {
 				node.Tick()
 			}
 			done <- true
-		}(nodes[idx], i)
+		}(nodes[i], i)
 	}
 	
 	// Wait for all goroutines to complete
