@@ -95,6 +95,33 @@ func NewNodeWithState(id int, persistentState PersistentState, storage storage.S
 	}
 }
 
+// NewNodeFromStorage creates a new node by loading its state from storage
+func NewNodeFromStorage(id int, storage storage.Storage) (*Node, error) {
+	node := &Node{
+		ID:          id,
+		State:       Follower,
+		CurrentTerm: 0,
+		VotedFor:    -1,
+		Log:         make([]LogEntry, 0),
+		CommitIndex: 0,
+		LastApplied: 0,
+		Storage:     storage,
+	}
+
+	// Load the persistent state from storage
+	if storage != nil {
+		ctx := context.Background()
+		term, votedFor, err := storage.LoadVote(ctx)
+		if err != nil {
+			return nil, err
+		}
+		node.CurrentTerm = term
+		node.VotedFor = votedFor
+	}
+
+	return node, nil
+}
+
 func (n *Node) GetPersistentState() PersistentState {
 	n.mutex.RLock()
 	defer n.mutex.RUnlock()
@@ -149,6 +176,11 @@ func (n *Node) TransitionToFollower(term int) {
 		n.CurrentTerm = term
 		n.VotedFor = -1
 	}
+
+	if n.Storage != nil {
+		ctx := context.Background()
+		_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
+	}
 }
 
 func (n *Node) StartElection() {
@@ -158,6 +190,11 @@ func (n *Node) StartElection() {
 	n.CurrentTerm++
 
 	n.VotedFor = n.ID
+
+	if n.Storage != nil {
+		ctx := context.Background()
+		_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
+	}
 
 	n.State = Candidate
 }
@@ -189,6 +226,12 @@ func (n *Node) Step(msg Message) {
 		n.CurrentTerm = msg.Term
 		n.VotedFor = -1
 		n.State = Follower
+
+		// Persist the updated state
+		if n.Storage != nil {
+			ctx := context.Background()
+			_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
+		}
 	} else if msg.Term < n.CurrentTerm {
 	}
 
@@ -219,6 +262,11 @@ func (n *Node) handleRequestVote(msg Message) {
 		n.VotedFor = msg.From
 		n.State = Follower
 		voteGranted = true
+	}
+
+	if voteGranted && n.Storage != nil {
+		ctx := context.Background()
+		_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
 	}
 
 	response := Message{
@@ -252,12 +300,10 @@ func (n *Node) AppendEntry(entry LogEntry) bool {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
-	// Only append if the entry's term matches the current term
 	if entry.Term != n.CurrentTerm {
 		return false
 	}
 
-	// Append the entry to the log
 	n.Log = append(n.Log, entry)
 	return true
 }
@@ -267,10 +313,9 @@ func (n *Node) GetLastLogIndexAndTerm() (index, term int) {
 	defer n.mutex.RUnlock()
 
 	if len(n.Log) == 0 {
-		return -1, -1 // Indicate empty log
+		return -1, -1
 	}
 
-	// Last index is length - 1 (since indices are 0-based)
 	lastIndex := len(n.Log) - 1
 	return lastIndex, n.Log[lastIndex].Term
 }
