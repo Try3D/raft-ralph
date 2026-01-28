@@ -1,0 +1,27 @@
+# Logs
+logs/
+*.log
+
+# Build artifacts
+*.o
+*.a
+*.so
+.DS_Store
+*.dylib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test binaries
+*.test
+
+# Dependency directories
+vendor/
+
+# Binary output
+/bin/
+/dist/
