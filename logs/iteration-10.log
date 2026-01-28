@@ -20,4 +20,8 @@ Result: Fully working implementation of Request Vote RPC with proper log compari
 Learnings/Issues:
 - Had to carefully handle mutex locking to avoid deadlocks between Step() and GetLastLogIndexAndTerm()
 - Needed to restructure the code to prevent recursive lock acquisition
-- Fixed test scenarios to accurately reflect Raft voting rules (can only vote once per term)
+- Fixed test scenarios to accurately reflect Raft voting rules (can only vote once per term)[2026-01-28T10:41:47.501694] ❌ qwen TIMEOUT (10 min)
+[2026-01-28T10:41:47.502075] 🔴 ABRUPT EXIT DETECTED: Timeout occurred
+[2026-01-28T10:41:47.502352] 🔴 Agent experienced abrupt exit
+[2026-01-28T10:41:47.502408] 🔴 It happened. It fucked up.
+[2026-01-28T10:41:47.502467] ⏱️  Attempting recovery: committing current state...
