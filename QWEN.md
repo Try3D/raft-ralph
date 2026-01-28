@@ -30,7 +30,28 @@ You must not:
 - Assume correctness without verification
 - Hide uncertainty
 
-## 3. Engineering Standards (Strict)
+## 3. Scope Guidance (IMPORTANT)
+
+**Each iteration should:**
+- Be 1-2 hours of focused work
+- Produce meaningful changes (not trivial commits)
+- Add/modify 1-3 files
+- Include 10+ lines of real code changes minimum
+- Include actual test implementations, not stubs
+- Verify the work with multiple test scenarios
+
+**One iteration examples:**
+- ✅ Add full test suite for one invariant + minimal implementation
+- ✅ Implement a complete RPC handler + tests
+- ✅ Build a storage interface + file-based implementation with tests
+- ❌ Just write a type definition
+- ❌ Just rename a variable
+- ❌ Just add comments
+
+**If the TODO feels too small after reading it:**
+Split it mentally into subtasks and combine 2-3 into one iteration.
+
+## 4. Engineering Standards (Strict)
 
 You must adhere to the following Go industry best practices:
 
@@ -40,11 +61,17 @@ You must adhere to the following Go industry best practices:
 - Keep the root directory clean (only `go.mod`, `README`, etc.).
 
 **Code Quality:**
-- strict error handling: wrap errors with context (`fmt.Errorf("doing x: %w", err)`).
+- Wrap errors with context: `fmt.Errorf("operation: %w", err)`
 - **Never** ignore errors.
 - Use strict typing. Avoid `interface{}` unless absolutely necessary.
 - Use `context.Context` for long-running operations, I/O, and RPCs.
 - Document exported types and functions.
+
+**Comments:**
+- NO inline comments for obvious code
+- NO commented-out code blocks
+- Only comment: complex algorithms, non-obvious design choices, info for users
+- Keep comments brief and to-the-point
 
 **Robust File System Usage:**
 - When implementing persistence, assume the file system is unreliable.
@@ -57,48 +84,51 @@ You must adhere to the following Go industry best practices:
 - Always use `go test -race ./...` to catch concurrency bugs.
 - Write table-driven tests (`t.Run`) for complex logic.
 - Ensure strict linting passes (assume `golangci-lint` is standard).
-- **Concurrency Testing:** Use Go's concurrency primitives extensively in tests. Spawn "virtual threads" (goroutines) to simulate multiple clients, peer nodes, or network conditions.
+- Concurrency Testing: Use Go's concurrency primitives extensively. Spawn goroutines to simulate multiple clients, peer nodes, or network conditions.
 - Use channels to model concurrent events and network partitions.
 
-## 4. Scope Rules
+## 5. Scope Rules
 
 **Allowed:**
-- One invariant
-- One module
-- One behavior
-- One test category (unit OR integration)
+- One major invariant
+- Multiple related test cases
+- One module/package
+- Related behavior patterns
+- Both unit AND integration tests in same iteration
 
 **Forbidden:**
-- "Implement leader election"
-- "Finish replication"
-- "Handle snapshots fully"
+- "Implement leader election" (too big)
+- "Finish replication" (too big)
+- "Handle snapshots fully" (too big)
 - Large refactors unless explicitly requested
 
-If the task feels big, split it.
+**If the task feels big, split it before touching code.**
 
-## 4. Definition of "Done"
+## 6. Definition of "Done"
 
 A task is done only if:
 - Tests exist and pass
 - The invariant is enforced
 - No unrelated behavior changed
 - Failure cases are considered
+- Code is properly formatted
+- No TODO comments left
 
 "Looks correct" is not a valid definition.
 
-## 5. Testing Requirements
+## 7. Testing Requirements
 
 You must always state:
 - What type of test you added or ran:
   - Unit
   - Integration
-  - Property / chaos (if applicable)
+  - Property / chaos
 - What invariant the test enforces
 - If no test was written, explain why.
 
-## 6. Reporting Format (MANDATORY)
+## 8. Reporting Format (MANDATORY)
 
-At the end of every response, you must include the following sections.
+At the end of every response, you must include:
 
 ✅ **What I Worked On**
 - Describe the single invariant or TODO
@@ -116,15 +146,14 @@ At the end of every response, you must include the following sections.
 Be honest. Partial progress is fine.
 
 ⚠️ **Learnings / Issues**
-- You must report:
-  - Anything confusing
-  - Any assumption you had to make
-  - Any design smell you noticed
-  - Any place future work might break
+- Anything confusing
+- Any assumption you had to make
+- Any design smell you noticed
+- Any place future work might break
 
 This section is not optional.
 
-## 7. When You Are Blocked
+## 9. When You Are Blocked
 
 If you cannot proceed:
 - Stop immediately
@@ -132,7 +161,7 @@ If you cannot proceed:
 - Suggest at least one concrete next step
 - Do NOT guess or hallucinate a solution
 
-## 8. Raft-Specific Rules
+## 10. Raft-Specific Rules
 
 You must respect the Raft paper invariants:
 - Term monotonicity
@@ -143,7 +172,7 @@ You must respect the Raft paper invariants:
 
 If an implementation choice risks violating one, you must call it out explicitly.
 
-## 9. No Silent Global Changes
+## 11. No Silent Global Changes
 
 You must not:
 - Change public APIs
@@ -155,21 +184,21 @@ Unless explicitly instructed.
 
 If you did, you must report it.
 
-## 10. Memory and Continuity
+## 12. Memory and Continuity
 
-- Always update TODO.md or write your understandings in it for later use
-- When starting work, read QWEN.md and TODO.md to see previous version's changes and ongoing work
-- Maintain continuity between different work sessions by documenting your progress and findings
+- Always update TODO.md with progress
+- When starting work, read QWEN.md and TODO.md first
+- Maintain continuity between sessions by documenting findings
 
-## 12. Testing Protocol
+## 13. Testing Protocol
 
-- Always run changes with robust testing each time to ensure functionality
-- Execute all relevant tests after each implementation to validate correctness
-- Document test results and conclusions in the corresponding test files
-- Append testing conclusions and outcomes to the relevant test files for future reference
-- Verify that all existing tests continue to pass when introducing new functionality
+- Run changes with robust testing each time
+- Execute all relevant tests after each implementation
+- Document test results in iteration logs
+- Append testing conclusions to relevant test files
+- Verify all existing tests continue to pass
 
-## 13. Language & Style
+## 14. Language & Style
 
 - Be precise
 - Be boring
@@ -202,7 +231,6 @@ If you did, you must report it.
 - After successful iteration: commit, push, then exit cleanly with code 0.
 - On blocking error: log the issue to `logs/iteration-{N}.log`, commit, push, then exit with code 1.
 - Never continue looping on git failures.
-
 
 ## 16. Concurrency Testing (Mandatory)
 
@@ -239,3 +267,4 @@ If you are ever unsure what to do next:
 👉 Do the smallest thing that increases confidence in correctness.
 
 That is always the right move.
+
