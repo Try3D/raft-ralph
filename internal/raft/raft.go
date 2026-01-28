@@ -76,6 +76,11 @@ type Node struct {
 
 	ClusterSize int
 
+	// Snapshot-related fields
+	LastIncludedIndex int
+	LastIncludedTerm  int
+	Snapshot          []byte
+
 	mutex sync.RWMutex
 }
 
@@ -93,6 +98,9 @@ func NewNode(id int, storage storage.Storage) *Node {
 		ElectionTimeoutCounter: 0,
 		RandomizedElectionTimeout: rand.Intn(150) + 150,
 		votesReceived:         make(map[int]bool),
+		LastIncludedIndex:     -1, // No snapshot initially
+		LastIncludedTerm:      0,
+		Snapshot:              nil,
 	}
 	return node
 }
@@ -111,6 +119,9 @@ func NewNodeWithState(id int, persistentState PersistentState, storage storage.S
 		ElectionTimeoutCounter: 0,
 		RandomizedElectionTimeout: rand.Intn(150) + 150,
 		votesReceived:         make(map[int]bool),
+		LastIncludedIndex:     -1, // No snapshot initially
+		LastIncludedTerm:      0,
+		Snapshot:              nil,
 	}
 }
 
@@ -128,6 +139,9 @@ func NewNodeFromStorage(id int, storage storage.Storage) (*Node, error) {
 		ElectionTimeoutCounter: 0,
 		RandomizedElectionTimeout: rand.Intn(150) + 150,
 		votesReceived:         make(map[int]bool),
+		LastIncludedIndex:     -1, // No snapshot initially
+		LastIncludedTerm:      0,
+		Snapshot:              nil,
 	}
 
 	if storage != nil {
@@ -630,18 +644,14 @@ func (n *Node) SubmitCommand(command interface{}) (bool, error) {
 		return false, fmt.Errorf("not the leader, cannot submit command")
 	}
 
-	// Create a new log entry with the command
 	newEntry := LogEntry{
 		Command: command,
 		Term:    n.CurrentTerm,
-		Index:   len(n.Log), // The index will be the current length of the log
+		Index:   len(n.Log),
 	}
 
-	// Append the entry to the log
 	n.Log = append(n.Log, newEntry)
 
-	// In a real implementation, we would wait for the entry to be committed
-	// before returning, but for this test implementation, we just add it to the log
 	return true, nil
 }
 
