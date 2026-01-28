@@ -95,3 +95,8 @@ Let me look at the append_entries_test.go file:
 [2026-01-28T11:29:57.606288] 🔴 Agent experienced abrupt exit
 [2026-01-28T11:29:57.606374] 🔴 It happened. It fucked up.
 [2026-01-28T11:29:57.606439] ⏱️  Attempting recovery: committing current state...
+[2026-01-28T11:29:57.649024] ✅ Git add SUCCESS
+[2026-01-28T11:29:57.735662] ✅ Git commit SUCCESS
+[2026-01-28T11:29:59.340357] ✅ Git push SUCCESS
+[2026-01-28T11:29:59.340701] ✅ Iteration 11 complete - committed and pushed
+[2026-01-28T11:29:59.340986] ✅ Recovery successful - continuing to next iteration
