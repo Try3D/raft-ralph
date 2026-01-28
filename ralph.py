@@ -157,9 +157,15 @@ Output ONLY the iteration report.
 
     except subprocess.TimeoutExpired:
         log_to_file(iteration, "❌ qwen TIMEOUT (10 min)")
+        log_to_file(iteration, "🔴 ABRUPT EXIT DETECTED: Timeout occurred")
         return False, "qwen command timed out", str(log_file)
+    except KeyboardInterrupt:
+        log_to_file(iteration, "❌ qwen INTERRUPTED by user")
+        log_to_file(iteration, "🔴 ABRUPT EXIT DETECTED: User interrupted")
+        return False, "User interrupted", str(log_file)
     except Exception as e:
         log_to_file(iteration, f"❌ qwen ERROR: {str(e)}")
+        log_to_file(iteration, f"🔴 ABRUPT EXIT DETECTED: {str(e)}")
         return False, str(e), str(log_file)
 
 
@@ -241,10 +247,23 @@ def main():
         success, output, log_file = run_qwen_iteration(i)
 
         if not success:
-            print(f"⚠️  qwen failed. Attempting to commit and push anyway...")
+            print(f"\n🔴 ABRUPT EXIT DETECTED at iteration {i}")
+            print(f"   qwen exited unexpectedly or timed out")
+            print(f"   This happened. It fucked up. Recovering...")
+            log_to_file(i, "🔴 Agent experienced abrupt exit")
+            log_to_file(i, "🔴 It happened. It fucked up.")
+            log_to_file(i, "⏱️  Attempting recovery: committing current state...")
+            print(f"   Attempting recovery: committing current state asap...")
+
             if not commit_and_push(i):
-                print(f"❌ Failed to commit/push. Check logs at {log_file}")
+                print(f"\n❌ Recovery failed - could not commit/push")
+                print(f"   Manual intervention needed. Check logs at {log_file}")
+                log_to_file(i, "❌ Recovery commit failed")
                 sys.exit(1)
+
+            print(f"✅ Recovery successful - current state committed")
+            print(f"   Moving to next iteration...")
+            log_to_file(i, "✅ Recovery successful - continuing to next iteration")
             continue
 
         # Check for blocking
@@ -258,8 +277,38 @@ def main():
         # Commit and push
         print(f"\n📦 Committing and pushing iteration {i}...")
         if not commit_and_push(i):
-            print(f"❌ Git operations failed. Exiting.")
-            sys.exit(1)
+            print(f"\n❌ Git operations failed during normal flow")
+            print(f"   Attempting forced recovery...")
+            log_to_file(i, "❌ Git operations failed - attempting forced recovery")
+
+            # Try again with explicit error handling
+            try:
+                subprocess.run(
+                    ["git", "add", "-A"], cwd=REPO_ROOT, capture_output=True, timeout=30
+                )
+                subprocess.run(
+                    [
+                        "git",
+                        "commit",
+                        "-m",
+                        f"iteration-{i}: recovery commit after failure",
+                    ],
+                    cwd=REPO_ROOT,
+                    capture_output=True,
+                    timeout=30,
+                )
+                subprocess.run(
+                    ["git", "push", GIT_REMOTE, GIT_BRANCH],
+                    cwd=REPO_ROOT,
+                    capture_output=True,
+                    timeout=30,
+                )
+                log_to_file(i, "✅ Recovery commit successful")
+                print("✅ Forced recovery successful - continuing...")
+            except Exception as e:
+                log_to_file(i, f"❌ Forced recovery failed: {str(e)}")
+                print(f"❌ Forced recovery failed. Exiting.")
+                sys.exit(1)
 
         print(f"✅ Iteration {i} complete")
 
