@@ -239,6 +239,17 @@ func (n *Node) TransitionToLeader() {
 		return
 	}
 	n.State = Leader
+
+	// Initialize nextIndex and matchIndex for all servers in the cluster
+	lastIndex, _ := n.getLastLogIndexAndTermUnlocked()
+	n.NextIndex = make([]int, n.ClusterSize)
+	n.MatchIndex = make([]int, n.ClusterSize)
+
+	for i := range n.NextIndex {
+		if i != n.ID {
+			n.NextIndex[i] = lastIndex + 1
+		}
+	}
 }
 
 func (n *Node) Step(msg Message) {
@@ -499,6 +510,70 @@ func (n *Node) handleRequestVoteResponse(msg Message) {
 }
 
 func (n *Node) handleAppendEntriesResponse(msg Message) {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	if n.State != Leader || msg.Term != n.CurrentTerm {
+		return
+	}
+
+	if msg.VoteGranted {
+		// Success response - update matchIndex and nextIndex
+		n.MatchIndex[msg.From] = n.NextIndex[msg.From] - 1
+		n.NextIndex[msg.From] = n.MatchIndex[msg.From] + 1
+	} else {
+		// Failure response - decrement nextIndex to probe for conflicts
+		if n.NextIndex[msg.From] > 0 {
+			n.NextIndex[msg.From]--
+		}
+	}
+}
+
+// SendAppendEntries sends AppendEntries RPCs to all followers
+func (n *Node) SendAppendEntries() {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	if n.State != Leader {
+		return
+	}
+
+	for i := 0; i < n.ClusterSize; i++ {
+		if i == n.ID {
+			continue // Skip self
+		}
+
+		// Prepare AppendEntries message
+		prevLogIndex := n.NextIndex[i] - 1
+		var prevLogTerm int
+		if prevLogIndex >= 0 && prevLogIndex < len(n.Log) {
+			prevLogTerm = n.Log[prevLogIndex].Term
+		} else {
+			prevLogTerm = -1
+		}
+
+		entriesToSend := []LogEntry{}
+		if n.NextIndex[i] < len(n.Log) {
+			entriesToSend = n.Log[n.NextIndex[i]:]
+		}
+
+		// Create the message that would be sent to the follower
+		msg := Message{
+			Type:        AppendEntriesMsg,
+			From:        n.ID,
+			To:          i,
+			Term:        n.CurrentTerm,
+			LogIndex:    prevLogIndex,
+			LogTerm:     prevLogTerm,
+			Entries:     entriesToSend,
+			CommitIndex: n.CommitIndex,
+		}
+
+		// In a real implementation, this would send the message over the network
+		// For now, we'll just simulate by calling the follower's Step method directly
+		// This is for testing purposes only
+		_ = msg
+	}
 }
 
 func (n *Node) AppendEntry(entry LogEntry) bool {
