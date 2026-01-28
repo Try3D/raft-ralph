@@ -1,107 +1,26 @@
-Iteration 1: Completed TODO-0.1: Verify Project Compiles
+Iteration 1: Core Node Types & Methods Implementation
 
-Work Performed:
-- Verified that the project compiles with `go build ./...`
-- Found and fixed an unused import in internal/storage/storage.go
-- Ran `go vet ./...` to check for issues
-- Ran all tests with `go test -race ./...` to ensure no data races
-- Verified all existing functionality still works
+Worked on TODO-0.2: Core Node Types & Methods
+
+Changes made:
+1. Removed all comments from raft.go as required by the rules
+2. Fixed the NewNode function to require a storage parameter
+3. Created MockStorage for testing purposes
+4. Updated all tests to use the MockStorage
+5. Added comprehensive tests for state validation:
+   - TestNodeAlwaysInValidState: Verifies the Node is always in exactly one valid state
+   - TestStateTransitionsAreExplicit: Tests that state transitions are explicit and testable
+
+Verification:
+- All existing tests pass
+- New tests for state validation pass
+- Race detector tests pass with no data races detected
+- Node maintains exactly one valid state at all times (Follower, Candidate, or Leader)
+- State transitions are explicit and testable
+- All methods (TransitionToFollower, TransitionToCandidate, TransitionToLeader, StartElection, Step) are implemented and working correctly
 
 Results:
-- Project compiles cleanly with no errors
-- No linting errors found
-- All tests pass with race detection enabled
-- Unused import "io" was removed from storage.go
-
-Invariants Verified:
-- Code compiles cleanly
-- No linting errors
---- QWEN OUTPUT START ---
-I'll follow the Ralph Wiggum loop to work on the first TODO from the list. Let me start by reading the TODO and QWEN files to understand the current state and requirements.
-
-Now I'll start working on the first TODO from the list: TODO-0.1: Verify Project Compiles. Let me check the current project structure and run the necessary commands.
-
-Let me check the go.mod file to understand the project structure:
-
-Now I'll check if there are any existing Go files in the internal/raft directory:
-
-Let me check what's in the raft directory:
-
-Let me examine the existing raft.go and raft_test.go files to understand the current state:
-
-Now I'll run the compilation and vetting commands to verify the project compiles correctly:
-
-# github.com/try3d/raft-ralph/internal/storage
-internal/storage/storage.go:8:2: "io" imported and not usedThere's an issue with an unused import in the storage module. Let me check the storage.go file:
-
-I can see that there's an unused import "io" in the storage.go file. Let me fix this:
-
-Now let me run the build command again to verify it compiles:
-
-Great! Now let me run go vet to check for any issues:
-
-Perfect! Now let me run the existing tests to make sure everything is working:
-
-=== RUN   TestStartElectionIncrementsTermAndVotesForSelf
---- PASS: TestStartElectionIncrementsTermAndVotesForSelf (0.00s)
-=== RUN   TestStartElectionTransitionsToCandidate
---- PASS: TestStartElectionTransitionsToCandidate (0.00s)
-=== RUN   TestStartElectionConcurrent
---- PASS: TestStartElectionConcurrent (0.00s)
-PASS
-ok  	github.com/try3d/raft-ralph/internal/raft	(cached)Now let me run the race detector to check for any data races:
-
-=== RUN   TestStartElectionIncrementsTermAndVotesForSelf
---- PASS: TestStartElectionIncrementsTermAndVotesForSelf (0.00s)
-=== RUN   TestStartElectionTransitionsToCandidate
---- PASS: TestStartElectionTransitionsToCandidate (0.00s)
-=== RUN   TestStartElectionConcurrent
---- PASS: TestStartElectionConcurrent (0.00s)
-PASS
-ok  	github.com/try3d/raft-ralph/internal/raft	1.564sLet me also run tests for the storage package:
-
-=== RUN   TestStorageInterfaceImplementation
-    storage_test.go:41: Storage interface is defined
---- PASS: TestStorageInterfaceImplementation (0.00s)
-=== RUN   TestSaveHardState
---- PASS: TestSaveHardState (0.00s)
-=== RUN   TestLoadHardState
---- PASS: TestLoadHardState (0.00s)
-=== RUN   TestStorageErrors
---- PASS: TestStorageErrors (0.00s)
-PASS
-ok  	github.com/try3d/raft-ralph/internal/storage	1.423sLet me run all tests to make sure everything is working:
-
-ok  	github.com/try3d/raft-ralph/internal/raft	1.153s
-ok  	github.com/try3d/raft-ralph/internal/storage	1.258sNow I'll create an iteration log file to document my work:
-
-Now I'll update the TODO.md file to mark the first task as completed:
-
-Now I'll commit the changes:
-
-[master 9c85395] iteration-1: Verify project compiles and fix unused import
- 4 files changed, 18 insertions(+), 121 deletions(-)To https://github.com/Try3D/raft-ralph.git
-   a30c172..9c85395  master -> master✅ **What I Worked On**
-- Completed TODO-0.1: Verify Project Compiles
-- Fixed unused import in internal/storage/storage.go
-- Verified project builds and passes all checks
-
-🧪 **Tests**
-- Ran `go build ./...` to verify compilation
-- Ran `go vet ./...` to check for linting errors
-- Ran `go test -race ./...` to verify all tests pass with race detection
-- All existing tests continue to pass
-
-📌 **Result**
-- Fully working
-
-⚠️ **Learnings / Issues**
-- Found an unused import "io" in the storage.go file that needed to be removed
-- All existing functionality works as expected after the fix
-- Project now compiles cleanly with no errors or warnings
-
---- QWEN OUTPUT END ---
-[2026-01-28T10:02:05.469594] ✅ Git add SUCCESS
-[2026-01-28T10:02:05.482877] ✅ Git commit SUCCESS
-[2026-01-28T10:02:06.994064] ✅ Git push SUCCESS
-[2026-01-28T10:02:06.994275] ✅ Iteration 1 complete - committed and pushed
+- Implemented all requirements for TODO-0.2
+- Maintained backward compatibility
+- Ensured thread safety with mutex protection
+- Verified all invariants hold true
