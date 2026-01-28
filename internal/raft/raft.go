@@ -219,6 +219,7 @@ func (n *Node) TransitionToLeader() {
 
 func (n *Node) Step(msg Message) {
 	n.mutex.Lock()
+	defer n.mutex.Unlock()
 
 	if msg.Term > n.CurrentTerm {
 		n.CurrentTerm = msg.Term
@@ -232,27 +233,13 @@ func (n *Node) Step(msg Message) {
 	} else if msg.Term < n.CurrentTerm {
 		if msg.Type == RequestVoteMsg {
 			n.sendRequestVoteResponse(msg, false)
-			n.mutex.Unlock()
 			return
 		}
 	}
 
-	var lastLogIndex, lastLogTerm int
-	if msg.Type == RequestVoteMsg {
-		if len(n.Log) == 0 {
-			lastLogIndex, lastLogTerm = -1, -1
-		} else {
-			lastIndex := len(n.Log) - 1
-			lastLogIndex = n.Log[lastIndex].Index
-			lastLogTerm = n.Log[lastIndex].Term
-		}
-	}
-
-	n.mutex.Unlock()
-
 	switch msg.Type {
 	case RequestVoteMsg:
-		n.handleRequestVoteWithLogInfo(msg, lastLogIndex, lastLogTerm)
+		n.handleRequestVote(msg)
 	case AppendEntriesMsg:
 		n.handleAppendEntries(msg)
 	case RequestVoteResponseMsg:
@@ -261,8 +248,6 @@ func (n *Node) Step(msg Message) {
 		n.handleAppendEntriesResponse(msg)
 	}
 
-	n.mutex.Lock()
-	defer n.mutex.Unlock()
 	if !n.State.IsValidState() {
 		panic("node is in an invalid state after processing message")
 	}
@@ -280,9 +265,6 @@ func (n *Node) sendRequestVoteResponse(request Message, voteGranted bool) {
 }
 
 func (n *Node) handleRequestVote(msg Message) {
-	n.mutex.Lock()
-	defer n.mutex.Unlock()
-
 	voteGranted := false
 
 	logUpToDate := false
