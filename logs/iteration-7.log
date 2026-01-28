@@ -1,0 +1,27 @@
+Iteration 7: Log Entry Types & Append Implementation
+
+Work Performed:
+- Implemented TODO-1.1: Log Entry Types & Append
+- Modified LogEntry struct to include Index field
+- Updated AppendEntry method to properly assign indices when appending entries
+- Updated GetLastLogIndexAndTerm method to return the actual index from the log entry
+- Created comprehensive test suite in log_entry_test.go:
+  - TestLogAppendIncrementsIndex: Verifies that appending entries increments the log index
+  - TestLogTermNeverChanges: Verifies that entry term is immutable after append
+  - TestLogCannotSkipIndices: Verifies that log indices are contiguous
+  - TestConcurrentAppends: Tests concurrent appending of entries with sync.WaitGroup
+  - TestAppendEntryWithWrongTerm: Tests that AppendEntry fails when term doesn't match
+
+Tests Results:
+- All new tests pass
+- Race detector passes with -race flag
+- All existing tests continue to pass
+- Build succeeds with go build ./...
+- Log indices are now properly maintained and contiguous
+- Entry terms remain immutable after append
+
+Invariants Verified:
+- Log indices are contiguous (0, 1, 2, ...)
+- Log entries never reorder
+- Entry term never changes after append
+- AppendEntry only adds entries when term matches current term

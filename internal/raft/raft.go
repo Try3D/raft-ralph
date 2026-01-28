@@ -37,6 +37,7 @@ type Message struct {
 type LogEntry struct {
 	Command interface{}
 	Term    int
+	Index   int
 }
 
 type NodeState int
@@ -304,6 +305,10 @@ func (n *Node) AppendEntry(entry LogEntry) bool {
 		return false
 	}
 
+	// Set the index to be the next available index
+	nextIndex := len(n.Log)
+	entry.Index = nextIndex
+
 	n.Log = append(n.Log, entry)
 	return true
 }
@@ -317,7 +322,7 @@ func (n *Node) GetLastLogIndexAndTerm() (index, term int) {
 	}
 
 	lastIndex := len(n.Log) - 1
-	return lastIndex, n.Log[lastIndex].Term
+	return n.Log[lastIndex].Index, n.Log[lastIndex].Term
 }
 
 type MockStorage struct{}

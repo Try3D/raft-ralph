@@ -8,7 +8,7 @@ import (
 // TestLogAppendIncrementsIndex tests that appending entries increments the log index
 func TestLogAppendIncrementsIndex(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
-	
+
 	// Initially, the log should be empty
 	index, _ := node.GetLastLogIndexAndTerm()
 	if index != -1 {
@@ -55,7 +55,7 @@ func TestLogAppendIncrementsIndex(t *testing.T) {
 // TestLogTermNeverChanges tests that entry term is immutable after append
 func TestLogTermNeverChanges(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
-	
+
 	// Start an election to set the current term
 	node.StartElection()
 	currentTerm := node.CurrentTerm
@@ -90,7 +90,7 @@ func TestLogTermNeverChanges(t *testing.T) {
 // TestLogCannotSkipIndices tests that log indices are contiguous
 func TestLogCannotSkipIndices(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
-	
+
 	// Start an election to set the current term
 	node.StartElection()
 	currentTerm := node.CurrentTerm
@@ -115,7 +115,7 @@ func TestLogCannotSkipIndices(t *testing.T) {
 // TestConcurrentAppends tests concurrent appending of entries
 func TestConcurrentAppends(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
-	
+
 	// Start an election to set the current term
 	node.StartElection()
 	currentTerm := node.CurrentTerm
@@ -133,7 +133,7 @@ func TestConcurrentAppends(t *testing.T) {
 
 			entry := LogEntry{Command: "command" + string(rune('0' + goroutineID)), Term: currentTerm}
 			success := node.AppendEntry(entry)
-			
+
 			// Send the result to the channel
 			if success {
 				results <- 1
@@ -168,7 +168,7 @@ func TestConcurrentAppends(t *testing.T) {
 // TestAppendEntryWithWrongTerm tests that AppendEntry fails when term doesn't match
 func TestAppendEntryWithWrongTerm(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
-	
+
 	// Start an election to set the current term
 	node.StartElection()
 	currentTerm := node.CurrentTerm
