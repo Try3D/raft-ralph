@@ -211,8 +211,17 @@ func (n *Node) Step(msg Message) {
 func (n *Node) handleRequestVote(msg Message) {
 	voteGranted := false
 
+	// Grant vote if:
+	// 1. The request's term is equal to the current term
+	// 2. The node hasn't voted yet in this term OR has already voted for the requesting candidate
 	if msg.Term == n.CurrentTerm && (n.VotedFor == -1 || n.VotedFor == msg.From) {
 		n.VotedFor = msg.From
+		voteGranted = true
+	} else if msg.Term > n.CurrentTerm {
+		// If the request has a higher term, update term and vote for the candidate
+		n.CurrentTerm = msg.Term
+		n.VotedFor = msg.From
+		n.State = Follower
 		voteGranted = true
 	}
 
