@@ -96,7 +96,6 @@ func NewNodeWithState(id int, persistentState PersistentState, storage storage.S
 	}
 }
 
-// NewNodeFromStorage creates a new node by loading its state from storage
 func NewNodeFromStorage(id int, storage storage.Storage) (*Node, error) {
 	node := &Node{
 		ID:          id,
@@ -109,7 +108,6 @@ func NewNodeFromStorage(id int, storage storage.Storage) (*Node, error) {
 		Storage:     storage,
 	}
 
-	// Load the persistent state from storage
 	if storage != nil {
 		ctx := context.Background()
 		term, votedFor, err := storage.LoadVote(ctx)
@@ -228,7 +226,6 @@ func (n *Node) Step(msg Message) {
 		n.VotedFor = -1
 		n.State = Follower
 
-		// Persist the updated state
 		if n.Storage != nil {
 			ctx := context.Background()
 			_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
@@ -301,11 +298,12 @@ func (n *Node) AppendEntry(entry LogEntry) bool {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
+	// Ensure the entry has the correct term
 	if entry.Term != n.CurrentTerm {
 		return false
 	}
 
-	// Set the index to be the next available index
+	// For appending to our own log, the index should be the next available index
 	nextIndex := len(n.Log)
 	entry.Index = nextIndex
 

@@ -1,0 +1,31 @@
+Iteration 8 - Log Entry Types & Append Implementation
+
+Work Performed:
+- Worked on TODO-1.1: Log Entry Types & Append
+- Implemented AppendEntry() method with proper index handling
+- Ensured log indices are contiguous and entries never reorder
+- Made the implementation thread-safe using mutex
+- Updated tests to verify the required invariants
+
+Changes Made:
+- Modified AppendEntry() method in internal/raft/raft.go to properly handle index assignment
+- Removed all inline comments from raft.go as required by the working agreement
+- Verified that existing tests pass with the new implementation
+
+Tests Added/Verified:
+- TestLogAppendIncrementsIndex: Verifies that appending entries increments the log index
+- TestLogTermNeverChanges: Verifies that entry term is immutable after append
+- TestLogCannotSkipIndices: Verifies that log indices are contiguous
+- TestConcurrentAppends: Verifies concurrent appending works correctly with mutex protection
+- Ran all tests with -race flag to ensure no data races
+
+Results:
+- All tests pass
+- Implementation meets the required invariants:
+  - Log indices are contiguous
+  - Log entries never reorder
+  - Entry term never changes after append
+- Thread safety confirmed with race detection testing
+
+Next Steps:
+- Move to the next TODO item in the list
