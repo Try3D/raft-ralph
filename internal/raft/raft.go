@@ -3,7 +3,9 @@ package raft
 import (
 	"context"
 	"encoding/json"
+	"math/rand"
 	"sync"
+	"time"
 
 	"github.com/try3d/raft-ralph/internal/storage"
 )
@@ -73,42 +75,51 @@ type Node struct {
 }
 
 func NewNode(id int, storage storage.Storage) *Node {
+	rand.Seed(time.Now().UnixNano())
 	node := &Node{
-		ID:          id,
-		State:       Follower,
-		CurrentTerm: 0,
-		VotedFor:    -1,
-		Log:         make([]LogEntry, 0),
-		CommitIndex: 0,
-		LastApplied: 0,
-		Storage:     storage,
+		ID:                    id,
+		State:                 Follower,
+		CurrentTerm:           0,
+		VotedFor:              -1,
+		Log:                   make([]LogEntry, 0),
+		CommitIndex:           0,
+		LastApplied:           0,
+		Storage:               storage,
+		ElectionTimeoutCounter: 0,
+		RandomizedElectionTimeout: rand.Intn(150) + 150, // Random timeout between 150-299ms
 	}
 	return node
 }
 
 func NewNodeWithState(id int, persistentState PersistentState, storage storage.Storage) *Node {
+	rand.Seed(time.Now().UnixNano())
 	return &Node{
-		ID:          id,
-		State:       Follower,
-		CurrentTerm: persistentState.CurrentTerm,
-		VotedFor:    persistentState.VotedFor,
-		Log:         make([]LogEntry, 0),
-		CommitIndex: 0,
-		LastApplied: 0,
-		Storage:     storage,
+		ID:                    id,
+		State:                 Follower,
+		CurrentTerm:           persistentState.CurrentTerm,
+		VotedFor:              persistentState.VotedFor,
+		Log:                   make([]LogEntry, 0),
+		CommitIndex:           0,
+		LastApplied:           0,
+		Storage:               storage,
+		ElectionTimeoutCounter: 0,
+		RandomizedElectionTimeout: rand.Intn(150) + 150, // Random timeout between 150-299ms
 	}
 }
 
 func NewNodeFromStorage(id int, storage storage.Storage) (*Node, error) {
+	rand.Seed(time.Now().UnixNano())
 	node := &Node{
-		ID:          id,
-		State:       Follower,
-		CurrentTerm: 0,
-		VotedFor:    -1,
-		Log:         make([]LogEntry, 0),
-		CommitIndex: 0,
-		LastApplied: 0,
-		Storage:     storage,
+		ID:                    id,
+		State:                 Follower,
+		CurrentTerm:           0,
+		VotedFor:              -1,
+		Log:                   make([]LogEntry, 0),
+		CommitIndex:           0,
+		LastApplied:           0,
+		Storage:               storage,
+		ElectionTimeoutCounter: 0,
+		RandomizedElectionTimeout: rand.Intn(150) + 150, // Random timeout between 150-299ms
 	}
 
 	if storage != nil {
@@ -228,6 +239,7 @@ func (n *Node) Step(msg Message) {
 		n.CurrentTerm = msg.Term
 		n.VotedFor = -1
 		n.State = Follower
+		n.ElectionTimeoutCounter = 0 // Reset timeout when stepping down
 
 		if n.Storage != nil {
 			ctx := context.Background()
@@ -244,6 +256,7 @@ func (n *Node) Step(msg Message) {
 	case RequestVoteMsg:
 		n.handleRequestVote(msg)
 	case AppendEntriesMsg:
+		n.ElectionTimeoutCounter = 0 // Reset timeout on receiving heartbeat/entries
 		n.handleAppendEntries(msg)
 	case RequestVoteResponseMsg:
 		n.handleRequestVoteResponse(msg)
@@ -268,6 +281,9 @@ func (n *Node) sendRequestVoteResponse(request Message, voteGranted bool) {
 }
 
 func (n *Node) handleRequestVote(msg Message) {
+	// Reset election timeout when receiving RequestVote message
+	n.ElectionTimeoutCounter = 0
+
 	voteGranted := false
 
 	logUpToDate := false
@@ -459,6 +475,33 @@ func (n *Node) GetLastLogIndexAndTerm() (index, term int) {
 
 	lastIndex := len(n.Log) - 1
 	return n.Log[lastIndex].Index, n.Log[lastIndex].Term
+}
+
+func (n *Node) Tick() {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	n.ElectionTimeoutCounter++
+
+	if n.State == Follower || n.State == Candidate {
+		if n.ElectionTimeoutCounter >= n.RandomizedElectionTimeout {
+			n.startElectionAsFollower()
+		}
+	}
+}
+
+func (n *Node) startElectionAsFollower() {
+	n.CurrentTerm++
+	n.VotedFor = n.ID
+	n.State = Candidate
+
+	if n.Storage != nil {
+		ctx := context.Background()
+		_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
+	}
+
+	// Reset election timeout counter after starting election
+	n.ElectionTimeoutCounter = 0
 }
 
 type MockStorage struct{}
