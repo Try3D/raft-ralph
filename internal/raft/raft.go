@@ -66,6 +66,9 @@ type Node struct {
 
 	Storage storage.Storage
 
+	ElectionTimeoutCounter int
+	RandomizedElectionTimeout int
+
 	mutex sync.RWMutex
 }
 
