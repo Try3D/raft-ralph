@@ -379,3 +379,8 @@ Let me check for append entries tests:
 [2026-01-28T11:20:11.016752] 🔴 Agent experienced abrupt exit
 [2026-01-28T11:20:11.016923] 🔴 It happened. It fucked up.
 [2026-01-28T11:20:11.017099] ⏱️  Attempting recovery: committing current state...
+[2026-01-28T11:20:11.068791] ✅ Git add SUCCESS
+[2026-01-28T11:20:11.140401] ✅ Git commit SUCCESS
+[2026-01-28T11:20:12.769587] ✅ Git push SUCCESS
+[2026-01-28T11:20:12.769885] ✅ Iteration 8 complete - committed and pushed
+[2026-01-28T11:20:12.770054] ✅ Recovery successful - continuing to next iteration
