@@ -3,6 +3,7 @@ package raft
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -374,9 +375,6 @@ func (n *Node) getLastLogIndexAndTermUnlocked() (index, term int) {
 }
 
 func (n *Node) handleAppendEntries(msg Message) {
-	n.mutex.Lock()
-	defer n.mutex.Unlock()
-
 	if msg.Term < n.CurrentTerm {
 		response := Message{
 			Type:        AppendEntriesResponseMsg,
@@ -622,6 +620,29 @@ func (n *Node) startElectionAsFollower() {
 	}
 
 	n.ElectionTimeoutCounter = 0
+}
+
+func (n *Node) SubmitCommand(command interface{}) (bool, error) {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	if n.State != Leader {
+		return false, fmt.Errorf("not the leader, cannot submit command")
+	}
+
+	// Create a new log entry with the command
+	newEntry := LogEntry{
+		Command: command,
+		Term:    n.CurrentTerm,
+		Index:   len(n.Log), // The index will be the current length of the log
+	}
+
+	// Append the entry to the log
+	n.Log = append(n.Log, newEntry)
+
+	// In a real implementation, we would wait for the entry to be committed
+	// before returning, but for this test implementation, we just add it to the log
+	return true, nil
 }
 
 type MockStorage struct{}

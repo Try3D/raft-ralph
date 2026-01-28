@@ -92,22 +92,34 @@ func TestConcurrentLogReplication(t *testing.T) {
 	leader.setState(Leader)
 	leader.CurrentTerm = 1
 
-	// Create 3 follower nodes
-	follower1 := NewNode(2, &MockStorage{})
-	follower1.CurrentTerm = 1
-	
-	follower2 := NewNode(3, &MockStorage{})
-	follower2.CurrentTerm = 1
-	
-	follower3 := NewNode(4, &MockStorage{})
-	follower3.CurrentTerm = 1
-
 	// Add some initial entries to the leader
 	leaderEntry1 := LogEntry{Command: "leader-command1", Term: 1}
 	leader.AppendEntry(leaderEntry1)
-	
+
 	leaderEntry2 := LogEntry{Command: "leader-command2", Term: 1}
 	leader.AppendEntry(leaderEntry2)
+
+	// Create 3 follower nodes with the same initial state as the leader
+	follower1 := NewNode(2, &MockStorage{})
+	follower1.CurrentTerm = 1
+	follower1Entry1 := LogEntry{Command: "leader-command1", Term: 1}
+	follower1.AppendEntry(follower1Entry1)
+	follower1Entry2 := LogEntry{Command: "leader-command2", Term: 1}
+	follower1.AppendEntry(follower1Entry2)
+
+	follower2 := NewNode(3, &MockStorage{})
+	follower2.CurrentTerm = 1
+	follower2Entry1 := LogEntry{Command: "leader-command1", Term: 1}
+	follower2.AppendEntry(follower2Entry1)
+	follower2Entry2 := LogEntry{Command: "leader-command2", Term: 1}
+	follower2.AppendEntry(follower2Entry2)
+
+	follower3 := NewNode(4, &MockStorage{})
+	follower3.CurrentTerm = 1
+	follower3Entry1 := LogEntry{Command: "leader-command1", Term: 1}
+	follower3.AppendEntry(follower3Entry1)
+	follower3Entry2 := LogEntry{Command: "leader-command2", Term: 1}
+	follower3.AppendEntry(follower3Entry2)
 
 	// Simulate concurrent log replication to multiple followers
 	const numGoroutines = 3
@@ -151,13 +163,13 @@ func TestConcurrentLogReplication(t *testing.T) {
 	// Verify that all followers have received the replicated entry
 	followers := []*Node{follower1, follower2, follower3}
 	for i, follower := range followers {
-		if len(follower.Log) != 2 { // Original entry + replicated entry
-			t.Errorf("Follower %d: Expected log length to be 2, got %d", i+1, len(follower.Log))
+		if len(follower.Log) != 3 { // Original 2 entries + replicated entry
+			t.Errorf("Follower %d: Expected log length to be 3, got %d", i+1, len(follower.Log))
 		}
-		
-		if follower.Log[1].Command != "replicated-command" {
-			t.Errorf("Follower %d: Expected second entry to be 'replicated-command', got %v", 
-				i+1, follower.Log[1].Command)
+
+		if follower.Log[2].Command != "replicated-command" {
+			t.Errorf("Follower %d: Expected third entry to be 'replicated-command', got %v",
+				i+1, follower.Log[2].Command)
 		}
 	}
 }
