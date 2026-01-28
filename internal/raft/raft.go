@@ -219,8 +219,8 @@ func (n *Node) TransitionToLeader() {
 
 func (n *Node) Step(msg Message) {
 	n.mutex.Lock()
-	defer n.mutex.Unlock()
 
+	// Check term first and update if needed
 	if msg.Term > n.CurrentTerm {
 		n.CurrentTerm = msg.Term
 		n.VotedFor = -1
@@ -231,11 +231,32 @@ func (n *Node) Step(msg Message) {
 			_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
 		}
 	} else if msg.Term < n.CurrentTerm {
+		// For RequestVote messages with lower terms, we can return early
+		if msg.Type == RequestVoteMsg {
+			n.sendRequestVoteResponse(msg, false)
+			n.mutex.Unlock()
+			return
+		}
 	}
 
+	// Get log info for RequestVote handling
+	var lastLogIndex, lastLogTerm int
+	if msg.Type == RequestVoteMsg {
+		if len(n.Log) == 0 {
+			lastLogIndex, lastLogTerm = -1, -1
+		} else {
+			lastIndex := len(n.Log) - 1
+			lastLogIndex = n.Log[lastIndex].Index
+			lastLogTerm = n.Log[lastIndex].Term
+		}
+	}
+
+	n.mutex.Unlock()
+
+	// Handle the message without holding the lock
 	switch msg.Type {
 	case RequestVoteMsg:
-		n.handleRequestVote(msg)
+		n.handleRequestVoteWithLogInfo(msg, lastLogIndex, lastLogTerm)
 	case AppendEntriesMsg:
 		n.handleAppendEntries(msg)
 	case RequestVoteResponseMsg:
@@ -244,18 +265,44 @@ func (n *Node) Step(msg Message) {
 		n.handleAppendEntriesResponse(msg)
 	}
 
+	// Validate state after processing
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
 	if !n.State.IsValidState() {
 		panic("node is in an invalid state after processing message")
 	}
 }
 
+func (n *Node) sendRequestVoteResponse(request Message, voteGranted bool) {
+	response := Message{
+		Type:        RequestVoteResponseMsg,
+		From:        n.ID,
+		To:          request.From,
+		Term:        n.CurrentTerm,
+		VoteGranted: voteGranted,
+	}
+	_ = response
+}
+
 func (n *Node) handleRequestVote(msg Message) {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
 	voteGranted := false
 
-	if msg.Term == n.CurrentTerm && (n.VotedFor == -1 || n.VotedFor == msg.From) {
+	logUpToDate := false
+	lastLogIndex, lastLogTerm := n.getLastLogIndexAndTermUnlocked()
+
+	if msg.LogTerm > lastLogTerm {
+		logUpToDate = true
+	} else if msg.LogTerm == lastLogTerm && msg.LogIndex >= lastLogIndex {
+		logUpToDate = true
+	}
+
+	if msg.Term == n.CurrentTerm && (n.VotedFor == -1 || n.VotedFor == msg.From) && logUpToDate {
 		n.VotedFor = msg.From
 		voteGranted = true
-	} else if msg.Term > n.CurrentTerm {
+	} else if msg.Term > n.CurrentTerm && logUpToDate {
 		n.CurrentTerm = msg.Term
 		n.VotedFor = msg.From
 		n.State = Follower
@@ -267,14 +314,48 @@ func (n *Node) handleRequestVote(msg Message) {
 		_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
 	}
 
-	response := Message{
-		Type:        RequestVoteResponseMsg,
-		From:        n.ID,
-		To:          msg.From,
-		Term:        n.CurrentTerm,
-		VoteGranted: voteGranted,
+	n.sendRequestVoteResponse(msg, voteGranted)
+}
+
+func (n *Node) handleRequestVoteWithLogInfo(msg Message, lastLogIndex, lastLogTerm int) {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	voteGranted := false
+
+	logUpToDate := false
+
+	if msg.LogTerm > lastLogTerm {
+		logUpToDate = true
+	} else if msg.LogTerm == lastLogTerm && msg.LogIndex >= lastLogIndex {
+		logUpToDate = true
 	}
-	_ = response
+
+	if msg.Term == n.CurrentTerm && (n.VotedFor == -1 || n.VotedFor == msg.From) && logUpToDate {
+		n.VotedFor = msg.From
+		voteGranted = true
+	} else if msg.Term > n.CurrentTerm && logUpToDate {
+		n.CurrentTerm = msg.Term
+		n.VotedFor = msg.From
+		n.State = Follower
+		voteGranted = true
+	}
+
+	if voteGranted && n.Storage != nil {
+		ctx := context.Background()
+		_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
+	}
+
+	n.sendRequestVoteResponse(msg, voteGranted)
+}
+
+func (n *Node) getLastLogIndexAndTermUnlocked() (index, term int) {
+	if len(n.Log) == 0 {
+		return -1, -1
+	}
+
+	lastIndex := len(n.Log) - 1
+	return n.Log[lastIndex].Index, n.Log[lastIndex].Term
 }
 
 func (n *Node) handleAppendEntries(msg Message) {

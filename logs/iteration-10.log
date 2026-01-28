@@ -1,0 +1,23 @@
+Iteration 10 - Wed Jan 28 12:16:42 EST 2026
+
+Worked on: TODO-1.2: Request Vote RPC Full Behavior
+- Updated handleRequestVote to check log term/index for candidate log comparison
+- Implemented proper log comparison logic: grant vote only if candidate log is at least as up-to-date as ours
+- Log is considered up-to-date if: (candidate's log term > our log term) OR (candidate's log term == our log term AND candidate's log index >= our log index)
+- Created comprehensive tests covering:
+  - TestVoteGrantedIfLogUpToDate: candidate with more up-to-date log gets vote
+  - TestVoteDeniedIfLogOutOfDate: candidate with older log denied
+  - TestLogComparisonByTerm: term takes precedence over index
+  - TestConcurrentVoteComparison: multiple nodes comparing logs concurrently
+
+Tests: All tests pass including race detection
+- Verified data races with go test -race
+- All existing tests continue to pass
+- New tests verify log comparison behavior
+
+Result: Fully working implementation of Request Vote RPC with proper log comparison logic according to Raft specification
+
+Learnings/Issues:
+- Had to carefully handle mutex locking to avoid deadlocks between Step() and GetLastLogIndexAndTerm()
+- Needed to restructure the code to prevent recursive lock acquisition
+- Fixed test scenarios to accurately reflect Raft voting rules (can only vote once per term)
