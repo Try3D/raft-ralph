@@ -10,14 +10,14 @@ raft/
 ├── README.md             # This file
 ├── QWEN.md              # Engineering standards & working agreement
 ├── TODO.md              # Invariant ladder & work breakdown
-├── ralph.sh             # Ralph Wiggum loop orchestrator
+├── ralph.py             # Ralph Wiggum loop (Python) - RECOMMENDED
+├── ralph.sh             # Ralph Wiggum loop (Bash) - Alternative
 ├── .gitignore          # Git ignore rules
-├── logs/                # Iteration logs (git-ignored)
+├── logs/                # Iteration logs (committed to GitHub)
 ├── internal/
 │   └── raft/           # Core Raft library (private)
-│       ├── types.go    # Type definitions
-│       ├── node.go     # Node implementation
-│       └── raft.go     # RPC handlers
+│       ├── raft.go     # Type definitions & implementation
+│       └── raft_test.go # Tests (to be created)
 ├── cmd/
 │   └── raft-server/    # Server binary (coming soon)
 └── internal/storage/   # Storage layer (coming soon)
@@ -35,7 +35,10 @@ git config user.name "Your Name"
 # Add remote (if not done)
 git remote add origin https://github.com/Try3D/raft-ralph.git
 
-# Run ralph loop
+# Run ralph loop (Python version - recommended)
+python3 ralph.py
+
+# Alternative: Run ralph loop (Bash version)
 bash ralph.sh
 ```
 
