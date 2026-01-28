@@ -86,7 +86,7 @@ func NewNode(id int, storage storage.Storage) *Node {
 		LastApplied:           0,
 		Storage:               storage,
 		ElectionTimeoutCounter: 0,
-		RandomizedElectionTimeout: rand.Intn(150) + 150, // Random timeout between 150-299ms
+		RandomizedElectionTimeout: rand.Intn(150) + 150,
 	}
 	return node
 }
@@ -103,7 +103,7 @@ func NewNodeWithState(id int, persistentState PersistentState, storage storage.S
 		LastApplied:           0,
 		Storage:               storage,
 		ElectionTimeoutCounter: 0,
-		RandomizedElectionTimeout: rand.Intn(150) + 150, // Random timeout between 150-299ms
+		RandomizedElectionTimeout: rand.Intn(150) + 150,
 	}
 }
 
@@ -119,7 +119,7 @@ func NewNodeFromStorage(id int, storage storage.Storage) (*Node, error) {
 		LastApplied:           0,
 		Storage:               storage,
 		ElectionTimeoutCounter: 0,
-		RandomizedElectionTimeout: rand.Intn(150) + 150, // Random timeout between 150-299ms
+		RandomizedElectionTimeout: rand.Intn(150) + 150,
 	}
 
 	if storage != nil {
@@ -239,7 +239,7 @@ func (n *Node) Step(msg Message) {
 		n.CurrentTerm = msg.Term
 		n.VotedFor = -1
 		n.State = Follower
-		n.ElectionTimeoutCounter = 0 // Reset timeout when stepping down
+		n.ElectionTimeoutCounter = 0
 
 		if n.Storage != nil {
 			ctx := context.Background()
@@ -256,7 +256,7 @@ func (n *Node) Step(msg Message) {
 	case RequestVoteMsg:
 		n.handleRequestVote(msg)
 	case AppendEntriesMsg:
-		n.ElectionTimeoutCounter = 0 // Reset timeout on receiving heartbeat/entries
+		n.ElectionTimeoutCounter = 0
 		n.handleAppendEntries(msg)
 	case RequestVoteResponseMsg:
 		n.handleRequestVoteResponse(msg)
@@ -281,7 +281,6 @@ func (n *Node) sendRequestVoteResponse(request Message, voteGranted bool) {
 }
 
 func (n *Node) handleRequestVote(msg Message) {
-	// Reset election timeout when receiving RequestVote message
 	n.ElectionTimeoutCounter = 0
 
 	voteGranted := false
@@ -500,7 +499,6 @@ func (n *Node) startElectionAsFollower() {
 		_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
 	}
 
-	// Reset election timeout counter after starting election
 	n.ElectionTimeoutCounter = 0
 }
 

@@ -9,24 +9,20 @@ func TestLogMatchingProperty(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 	node.CurrentTerm = 1
 
-	// Add an entry to the log
 	entry1 := LogEntry{Command: "command1", Term: 1}
 	node.AppendEntry(entry1)
 
-	// Send an AppendEntries message with matching previous log info
 	msg := Message{
 		Type:     AppendEntriesMsg,
 		From:     2,
 		To:       1,
 		Term:     1,
-		LogTerm:  1,      // Term of the last entry in the leader's log
-		LogIndex: 0,      // Index of the last entry in the leader's log
+		LogTerm:  1,
+		LogIndex: 0,
 		Entries:  []LogEntry{{Command: "command2", Term: 1}},
 	}
 
 	node.Step(msg)
-
-	// The entry should be appended successfully
 	if len(node.Log) != 2 {
 		t.Errorf("Expected log length to be 2, got %d", len(node.Log))
 	}
@@ -40,25 +36,20 @@ func TestConflictingEntriesRejected(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 	node.CurrentTerm = 1
 
-	// Add an entry to the log
 	entry1 := LogEntry{Command: "command1", Term: 1}
 	node.AppendEntry(entry1)
 
-	// Send an AppendEntries message with mismatching previous log info
 	msg := Message{
 		Type:     AppendEntriesMsg,
 		From:     2,
 		To:       1,
 		Term:     1,
-		LogTerm:  2,      // Different term than what's in the follower's log
-		LogIndex: 0,      // Index of the last entry in the leader's log
+		LogTerm:  2,
+		LogIndex: 0,
 		Entries:  []LogEntry{{Command: "command2", Term: 1}},
 	}
 
 	node.Step(msg)
-
-	// The entry should be rejected because of the mismatch
-	// The response would indicate failure, but we're checking that the log didn't change
 	if len(node.Log) != 1 {
 		t.Errorf("Expected log length to remain 1, got %d", len(node.Log))
 	}
@@ -72,11 +63,9 @@ func TestEmptyAppendEntriesAsHeartbeat(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 	node.CurrentTerm = 1
 
-	// Add an entry to the log
 	entry1 := LogEntry{Command: "command1", Term: 1}
 	node.AppendEntry(entry1)
 
-	// Send an empty AppendEntries message (heartbeat)
 	msg := Message{
 		Type:     AppendEntriesMsg,
 		From:     2,
@@ -84,12 +73,10 @@ func TestEmptyAppendEntriesAsHeartbeat(t *testing.T) {
 		Term:     1,
 		LogTerm:  1,
 		LogIndex: 0,
-		Entries:  []LogEntry{}, // Empty entries - heartbeat
+		Entries:  []LogEntry{},
 	}
 
 	node.Step(msg)
-
-	// The log should remain unchanged
 	if len(node.Log) != 1 {
 		t.Errorf("Expected log length to remain 1, got %d", len(node.Log))
 	}
@@ -179,7 +166,6 @@ func TestAppendEntriesWithHigherTerm(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 	node.CurrentTerm = 1
 
-	// Add an entry to the log
 	entry1 := LogEntry{Command: "command1", Term: 1}
 	node.AppendEntry(entry1)
 
@@ -219,7 +205,6 @@ func TestAppendEntriesWithLowerTerm(t *testing.T) {
 	node := NewNode(1, &MockStorage{})
 	node.CurrentTerm = 3
 
-	// Add an entry to the log
 	entry1 := LogEntry{Command: "command1", Term: 3}
 	node.AppendEntry(entry1)
 

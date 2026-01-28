@@ -10,7 +10,6 @@ func TestTickIncrementsTimeout(t *testing.T) {
 	
 	initialCounter := node.ElectionTimeoutCounter
 	
-	// Call Tick multiple times
 	node.Tick()
 	node.Tick()
 	node.Tick()
@@ -45,9 +44,6 @@ func TestRandomizedTimeout(t *testing.T) {
 		}
 	}
 	
-	// Even with randomization, there's a small chance they could be the same
-	// But we expect most of the time they'll be different
-	// So we'll just check they're in the expected range [150, 299]
 	for _, timeout := range timeouts {
 		if timeout < 150 || timeout > 299 {
 			t.Errorf("Expected timeout in range [150, 299], got %d", timeout)
@@ -58,13 +54,10 @@ func TestRandomizedTimeout(t *testing.T) {
 func TestElectionStartsAfterTimeout(t *testing.T) {
 	node := NewNode(1, nil)
 	
-	// Set the node to follower state
 	node.setState(Follower)
-	
-	// Manually set the timeout to a low value to trigger election
+
 	node.ElectionTimeoutCounter = node.RandomizedElectionTimeout - 1
-	
-	// Call Tick to trigger election
+
 	node.Tick()
 	
 	if node.State != Candidate {
@@ -79,7 +72,6 @@ func TestElectionStartsAfterTimeout(t *testing.T) {
 		t.Errorf("Expected node to vote for itself, got %d", node.VotedFor)
 	}
 	
-	// Counter should be reset after election
 	if node.ElectionTimeoutCounter != 0 {
 		t.Errorf("Expected election timeout counter to reset to 0, got %d", node.ElectionTimeoutCounter)
 	}
@@ -100,8 +92,7 @@ func TestConcurrentTicksFromMultipleNodes(t *testing.T) {
 	
 	for i := 0; i < numNodes; i++ {
 		go func(node *Node, idx int) {
-			// Call Tick multiple times
-			for j := 0; j < 10; j++ {
+					for j := 0; j < 10; j++ {
 				node.Tick()
 			}
 			done <- true
