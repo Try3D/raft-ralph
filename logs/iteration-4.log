@@ -1,0 +1,32 @@
+Iteration 4: File-Based Vote Storage Implementation
+
+Work Performed:
+- Implemented file-based storage implementation with atomic writes
+- Added fsync() for durability after every write
+- Implemented CRC32 checksums to detect corruption
+- Handled partial writes and corruption gracefully
+- Created comprehensive test suite including:
+  - TestVotePersistsAcrossRestart - verifies votes persist across restarts
+  - TestCorruptionDetection - verifies corruption is detected
+  - TestAtomicWrites - verifies concurrent writes don't corrupt state
+  - TestSaveVote - basic save functionality
+  - TestLoadVoteDefaultValues - handles non-existent files correctly
+  - TestStorageErrors - error handling
+  - TestConcurrentAccess - concurrent access safety
+
+Technical Details:
+- Used atomic file writes with temporary files and renames
+- Used fsync() on both the file and parent directory for durability
+- Implemented checksum verification to detect corruption
+- Used mutex to protect concurrent access to the same storage instance
+
+Testing Results:
+- All tests pass with race detection enabled
+- No data races detected
+- All edge cases handled properly (missing files, corruption, concurrent access)
+- Error handling works correctly
+
+Invariant Verification:
+- Data is durable after write returns (verified with fsync)
+- Corruption is detected on load (verified with checksums)
+- No data loss on crashes (atomic writes ensure this)
