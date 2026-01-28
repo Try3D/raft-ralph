@@ -336,14 +336,93 @@ func (n *Node) getLastLogIndexAndTermUnlocked() (index, term int) {
 }
 
 func (n *Node) handleAppendEntries(msg Message) {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	if msg.Term < n.CurrentTerm {
+		response := Message{
+			Type:        AppendEntriesResponseMsg,
+			From:        n.ID,
+			To:          msg.From,
+			Term:        n.CurrentTerm,
+			VoteGranted: false,
+		}
+		return
+	}
+
+	if msg.Term > n.CurrentTerm {
+		n.CurrentTerm = msg.Term
+		n.VotedFor = -1
+		n.State = Follower
+
+		if n.Storage != nil {
+			ctx := context.Background()
+			_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
+		}
+	}
+
+	if msg.LogIndex >= 0 {
+		if msg.LogIndex >= len(n.Log) {
+			response := Message{
+				Type:        AppendEntriesResponseMsg,
+				From:        n.ID,
+				To:          msg.From,
+				Term:        n.CurrentTerm,
+				VoteGranted: false,
+			}
+			return
+		}
+
+		if msg.LogIndex < len(n.Log) && n.Log[msg.LogIndex].Term != msg.LogTerm {
+			response := Message{
+				Type:        AppendEntriesResponseMsg,
+				From:        n.ID,
+				To:          msg.From,
+				Term:        n.CurrentTerm,
+				VoteGranted: false,
+			}
+			return
+		}
+	}
+
+	for i, entry := range msg.Entries {
+		logIndex := msg.LogIndex + 1 + i
+		if logIndex < len(n.Log) {
+			if n.Log[logIndex].Term != entry.Term {
+				n.Log = n.Log[:logIndex]
+				break
+			}
+		}
+	}
+
+	for i, entry := range msg.Entries {
+		logIndex := msg.LogIndex + 1 + i
+		if logIndex >= len(n.Log) {
+			newEntry := LogEntry{
+				Command: entry.Command,
+				Term:    entry.Term,
+				Index:   logIndex,
+			}
+			n.Log = append(n.Log, newEntry)
+		}
+	}
+
+	if msg.CommitIndex > n.CommitIndex {
+		lastNewIndex := msg.LogIndex + len(msg.Entries)
+		if lastNewIndex < n.CommitIndex {
+			n.CommitIndex = lastNewIndex
+		} else {
+			n.CommitIndex = msg.CommitIndex
+		}
+	}
+
 	response := Message{
 		Type:        AppendEntriesResponseMsg,
 		From:        n.ID,
 		To:          msg.From,
 		Term:        n.CurrentTerm,
-		VoteGranted: false,
+		VoteGranted: true,
 	}
-	_ = response
 }
 
 func (n *Node) handleRequestVoteResponse(msg Message) {
