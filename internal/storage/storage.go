@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/crc32"
-	"io"
 	"os"
 	"path/filepath"
 )
