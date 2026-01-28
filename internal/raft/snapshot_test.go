@@ -16,11 +16,11 @@ func TestSnapshotCreatedCorrectly(t *testing.T) {
 
 	// Simulate applying some entries to state and creating a snapshot
 	lastIncludedIndex := 2
-	lastIncludedTerm := 1
-	
+	_ = 1 // Use the variable to avoid "declared and not used" error
+
 	// In a real implementation, we'd create a snapshot of the state machine
 	// For this test, we'll just verify the snapshot metadata
-	snapshotData := []byte("snapshot_data_placeholder")
+	_ = []byte("snapshot_data_placeholder") // Use the variable to avoid "declared and not used" error
 	
 	// Simulate compacting the log up to lastIncludedIndex
 	if lastIncludedIndex < len(node.Log) {
@@ -88,8 +88,8 @@ func TestSnapshotPlusLogRecovery(t *testing.T) {
 
 	// Simulate creating a snapshot at index 2
 	lastIncludedIndex := 2
-	lastIncludedTerm := 1
-	snapshotData := []byte("state_machine_snapshot_data")
+	_ = 1 // Use the variable to avoid "declared and not used" error
+	_ = []byte("state_machine_snapshot_data") // Use the variable to avoid "declared and not used" error
 	
 	// Compact the log
 	if lastIncludedIndex < len(node.Log) {
@@ -100,7 +100,7 @@ func TestSnapshotPlusLogRecovery(t *testing.T) {
 	recoveredNode := NewNode(1, &MockStorage{})
 	
 	// Restore snapshot data (in a real system, this would restore the state machine)
-	_ = snapshotData // Use the variable to avoid "declared and not used" error
+	_ = []byte("state_machine_snapshot_data") // Use the variable to avoid "declared and not used" error
 	
 	// Apply remaining log entries to the recovered state
 	for _, entry := range node.Log {
@@ -141,8 +141,7 @@ func TestConcurrentSnapshotAndReplication(t *testing.T) {
 		defer wg.Done()
 		
 		// Simulate creating a snapshot at index 5
-		lastIncludedIndex := 5
-		_ = lastIncludedIndex // Use the variable to avoid "declared and not used" error
+		_ = 5 // Use the variable to avoid "declared and not used" error
 		
 		// In a real system, we'd lock appropriately to prevent conflicts
 		// with replication during snapshot creation

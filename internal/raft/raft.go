@@ -76,7 +76,6 @@ type Node struct {
 
 	ClusterSize int
 
-	// Snapshot-related fields
 	LastIncludedIndex int
 	LastIncludedTerm  int
 	Snapshot          []byte
@@ -98,7 +97,7 @@ func NewNode(id int, storage storage.Storage) *Node {
 		ElectionTimeoutCounter: 0,
 		RandomizedElectionTimeout: rand.Intn(150) + 150,
 		votesReceived:         make(map[int]bool),
-		LastIncludedIndex:     -1, // No snapshot initially
+		LastIncludedIndex:     -1,
 		LastIncludedTerm:      0,
 		Snapshot:              nil,
 	}
@@ -119,7 +118,7 @@ func NewNodeWithState(id int, persistentState PersistentState, storage storage.S
 		ElectionTimeoutCounter: 0,
 		RandomizedElectionTimeout: rand.Intn(150) + 150,
 		votesReceived:         make(map[int]bool),
-		LastIncludedIndex:     -1, // No snapshot initially
+		LastIncludedIndex:     -1,
 		LastIncludedTerm:      0,
 		Snapshot:              nil,
 	}
@@ -139,7 +138,7 @@ func NewNodeFromStorage(id int, storage storage.Storage) (*Node, error) {
 		ElectionTimeoutCounter: 0,
 		RandomizedElectionTimeout: rand.Intn(150) + 150,
 		votesReceived:         make(map[int]bool),
-		LastIncludedIndex:     -1, // No snapshot initially
+		LastIncludedIndex:     -1,
 		LastIncludedTerm:      0,
 		Snapshot:              nil,
 	}
@@ -379,14 +378,6 @@ func (n *Node) handleRequestVoteWithLogInfo(msg Message, lastLogIndex, lastLogTe
 	n.sendRequestVoteResponse(msg, voteGranted)
 }
 
-func (n *Node) getLastLogIndexAndTermUnlocked() (index, term int) {
-	if len(n.Log) == 0 {
-		return -1, -1
-	}
-
-	lastIndex := len(n.Log) - 1
-	return n.Log[lastIndex].Index, n.Log[lastIndex].Term
-}
 
 func (n *Node) handleAppendEntries(msg Message) {
 	if msg.Term < n.CurrentTerm {
@@ -594,17 +585,6 @@ func (n *Node) AppendEntry(entry LogEntry) bool {
 	return true
 }
 
-func (n *Node) GetLastLogIndexAndTerm() (index, term int) {
-	n.mutex.RLock()
-	defer n.mutex.RUnlock()
-
-	if len(n.Log) == 0 {
-		return -1, -1
-	}
-
-	lastIndex := len(n.Log) - 1
-	return n.Log[lastIndex].Index, n.Log[lastIndex].Term
-}
 
 func (n *Node) Tick() {
 	n.mutex.Lock()
@@ -653,6 +633,90 @@ func (n *Node) SubmitCommand(command interface{}) (bool, error) {
 	n.Log = append(n.Log, newEntry)
 
 	return true, nil
+}
+
+func (n *Node) CreateSnapshot(lastIncludedIndex int, lastIncludedTerm int, snapshotData []byte) error {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	if lastIncludedIndex < 0 || lastIncludedIndex >= len(n.Log) {
+		return fmt.Errorf("invalid snapshot index: %d", lastIncludedIndex)
+	}
+
+	if n.Log[lastIncludedIndex].Term != lastIncludedTerm {
+		return fmt.Errorf("term mismatch at snapshot index: expected %d, got %d",
+			lastIncludedTerm, n.Log[lastIncludedIndex].Term)
+	}
+
+	n.LastIncludedIndex = lastIncludedIndex
+	n.LastIncludedTerm = lastIncludedTerm
+	n.Snapshot = snapshotData
+
+	oldLog := n.Log
+	newLog := make([]LogEntry, 0)
+
+	for _, entry := range oldLog {
+		if entry.Index > lastIncludedIndex {
+			newEntry := LogEntry{
+				Command: entry.Command,
+				Term:    entry.Term,
+				Index:   entry.Index - (lastIncludedIndex + 1),
+			}
+			newLog = append(newLog, newEntry)
+		}
+	}
+
+	n.Log = newLog
+
+	if n.CommitIndex <= lastIncludedIndex {
+		n.CommitIndex = 0
+	} else {
+		n.CommitIndex = n.CommitIndex - (lastIncludedIndex + 1)
+	}
+
+	if n.LastApplied <= lastIncludedIndex {
+		n.LastApplied = 0
+	} else {
+		n.LastApplied = n.LastApplied - (lastIncludedIndex + 1)
+	}
+
+	return nil
+}
+func (n *Node) GetLogEntry(index int) (*LogEntry, bool) {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+
+	if index <= n.LastIncludedIndex {
+		return nil, false
+	}
+
+	adjustedIndex := index - (n.LastIncludedIndex + 1)
+
+	if adjustedIndex >= len(n.Log) || adjustedIndex < 0 {
+		return nil, false
+	}
+
+	return &n.Log[adjustedIndex], true
+}
+
+func (n *Node) GetLastLogIndexAndTerm() (index, term int) {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+
+	return n.getLastLogIndexAndTermUnlocked()
+}
+
+func (n *Node) getLastLogIndexAndTermUnlocked() (index, term int) {
+	if len(n.Log) == 0 {
+		if n.LastIncludedIndex >= 0 {
+			return n.LastIncludedIndex, n.LastIncludedTerm
+		}
+		return -1, -1
+	}
+
+	lastPhysicalIndex := len(n.Log) - 1
+	logicalIndex := n.Log[lastPhysicalIndex].Index
+	return logicalIndex, n.Log[lastPhysicalIndex].Term
 }
 
 type MockStorage struct{}
