@@ -183,21 +183,26 @@ If you did, you must report it.
 - ALL iteration logs MUST be written to `logs/` directory only.
 - File format: `logs/iteration-{N}.log` where N is iteration number.
 - Include comprehensive results, test runs, and error messages in logs.
+- Logs ARE committed to GitHub for audit trail and history.
 
 **Git Workflow (MANDATORY):**
 - After EACH successful iteration, commit changes with format: `git commit -m "iteration-{N}: {brief description}"`
 - Push to remote after each commit: `git push origin master`
 - If any git command fails, stop immediately and report the error.
-- Only commit source code and test files. DO NOT commit:
-  - `*.log` files
+- Commit the following:
+  - Source code changes
+  - Test files
+  - Iteration logs in `logs/` directory
+- DO NOT commit:
   - Temporary files
   - IDE files
-- Use `.gitignore` to exclude `logs/` and build artifacts.
+- Use `.gitignore` to exclude build artifacts and non-essential files.
 
 **Exit Protocol:**
 - After successful iteration: commit, push, then exit cleanly with code 0.
 - On blocking error: log the issue to `logs/iteration-{N}.log`, commit, push, then exit with code 1.
 - Never continue looping on git failures.
+
 
 ## 16. Concurrency Testing (Mandatory)
 

@@ -1,7 +1,3 @@
-# Logs
-logs/
-*.log
-
 # Build artifacts
 *.o
 *.a
