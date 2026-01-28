@@ -67,11 +67,20 @@ You must adhere to the following Go industry best practices:
 - Use `context.Context` for long-running operations, I/O, and RPCs.
 - Document exported types and functions.
 
-**Comments:**
-- NO inline comments for obvious code
-- NO commented-out code blocks
-- Only comment: complex algorithms, non-obvious design choices, info for users
-- Keep comments brief and to-the-point
+**COMMENTS - MANDATORY DELETE POLICY:**
+- **EVERY FILE MUST HAVE ALL EXISTING COMMENTS DELETED** (except file header)
+- NO inline comments whatsoever (self-documenting code names)
+- NO commented-out code blocks under any circumstances
+- NO "TODO" comments left in code
+- NEVER add comments while implementing
+- Code must be readable through clear naming and structure alone
+- EXCEPTION ONLY: Package-level doc comments for exported functions (required by Go linting)
+
+**Before committing ANY code:**
+1. Search for and DELETE every inline comment
+2. Search for and DELETE every commented-out line
+3. Verify: `grep -r "//" internal/raft/raft.go` returns ONLY doc comments (lines starting with package doc)
+4. If violations found, fix and re-commit
 
 **Robust File System Usage:**
 - When implementing persistence, assume the file system is unreliable.

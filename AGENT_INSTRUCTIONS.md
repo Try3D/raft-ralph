@@ -6,11 +6,21 @@
 
 You are an autonomous Go engineering agent working on a Raft consensus implementation.
 
+## MANDATORY: DELETE ALL COMMENTS FIRST
+
+**BEFORE doing anything else each iteration:**
+
+1. DO NOT USE ANY inline comment (every `//` that isn't a doc comment)
+2. Delete EVERY commented-out code line if it already exists
+3. If violations exist, fix and re-check
+
+**This is non-negotiable. Code must be self-documenting through naming alone.**
+
 ## Iteration Scope (IMPORTANT)
 
 **Each iteration must produce real, meaningful work:**
 
-- 30 mins-1 hours of focused effort
+- 0.5-1 hours of focused effort
 - 50+ lines of actual code (not comments or stubs)
 - 1-5 files modified/created
 - Complete test implementation, not just test names
@@ -32,45 +42,80 @@ You are an autonomous Go engineering agent working on a Raft consensus implement
 
 ## What You Must Do Each Iteration
 
-1. **Read QWEN.md section 3 (Scope Guidance)** - understand iteration size
-2. **Read QWEN.md and TODO.md first** - they define how you work
-3. **Pick ONE TODO from TODO.md in order** - don't skip, don't do multiple
-4. **Understand the invariant deeply** - what must be true?
-5. **Write comprehensive tests** - not stubs, real test logic with assertions
-6. **Implement minimal code** - just enough to satisfy tests
-7. **Run tests with race detector** - `go test -race ./internal/raft`
-8. **Commit and push** - save your work to GitHub
-9. **Report results** - use format from QWEN.md section 8
-10. **Log everything** - write to `logs/iteration-{N}.log` only
-11. **Exit** - python ralph loop handles next iteration
+1. **DELETE ALL COMMENTS** (first action, non-negotiable)
+   - Search: `grep -n "//" internal/raft/raft.go internal/raft/raft_test.go`
+   - Delete every inline comment
+   - Delete every commented-out line
+   - Keep only doc comments (if required by Go)
+   - Verify clean: no `//` except doc strings
+
+2. **Read QWEN.md section 4** - understand comment policy
+
+3. **Read QWEN.md and TODO.md first** - they define how you work
+
+4. **Pick ONE TODO from TODO.md in order** - don't skip, don't do multiple
+
+5. **Understand the invariant deeply** - what must be true?
+
+6. **Write comprehensive tests** - not stubs, real test logic with assertions
+   - Use table-driven tests
+   - Spawn goroutines with sync.WaitGroup
+   - Run with `go test -race`
+
+7. **Implement minimal code** - just enough to satisfy tests
+   - Write clean, self-documenting code
+   - Use clear variable/function names
+   - NO comments while implementing
+
+8. **Run tests with race detector** - `go test -race ./internal/raft`
+
+9. **BEFORE COMMITTING: Verify no comments**
+   - Run: `grep -r "//" internal/raft/`
+   - Result must be EMPTY or only doc comments
+   - If violations found, delete and re-test
+
+10. **Commit and push** - save your work to GitHub
+    - Commit message: "iteration-{N}: {description}"
+    - Push: `git push origin master`
+
+11. **Report results** - use format from QWEN.md section 8
+
+12. **Log everything** - write to `logs/iteration-{N}.log` only
+
+13. **Exit** - python ralph loop handles next iteration
 
 ## Critical Rules
 
 ⚠️ **You MUST follow these or your work is invalid:**
 
-1. **ONE TODO per iteration** - Pick next TODO and work ONLY on that
-2. **Real tests, not stubs** - Write actual test logic, not just func names
-3. **Use concurrency tests** - Spawn goroutines to simulate clients/nodes using `sync.WaitGroup`
-4. **Log to logs/ only** - All output goes to `logs/iteration-{N}.log`
-5. **Commit after working** - Run: `git commit -m "iteration-{N}: <description>"`
-6. **Push after committing** - Run: `git push origin master`
-7. **Report honestly** - Use exact format from QWEN.md section 8
-8. **Meaningful scope** - At least 1-2 hours of real work per iteration
-9. **No comments except info** - Only comment complex logic, not obvious code
-10. **Go best practices** - Production-grade from day one
+1. **DELETE COMMENTS FIRST** - every iteration starts with comment removal
+2. **ONE TODO per iteration** - Pick next TODO and work ONLY on that
+3. **Real tests, not stubs** - Write actual test logic, not just func names
+4. **Use concurrency tests** - Spawn goroutines to simulate clients/nodes using `sync.WaitGroup`
+5. **Log to logs/ only** - All output goes to `logs/iteration-{N}.log`
+6. **Commit after working** - Run: `git commit -m "iteration-{N}: <description>"`
+7. **Push after committing** - Run: `git push origin master`
+8. **Report honestly** - Use exact format from QWEN.md section 8
+9. **Meaningful scope** - At least 1-2 hours of real work per iteration
+10. **Code must be clean** - No comments except doc strings at all
+11. **Go best practices** - Production-grade from day one
 
 ## The Ralph Wiggum Loop Pattern
 
 ```
+DELETE ALL COMMENTS (mandatory first step)
+    ↓
 Read QWEN.md (scope guidance)
     ↓
 Pick ONE TODO from TODO.md
     ↓
 Write comprehensive tests
     ↓
-Implement minimal code
+Implement minimal code (NO COMMENTS)
     ↓
 Run: go test -race ./...
+    ↓
+VERIFY NO COMMENTS: grep -r "//" internal/raft/
     ↓
 Report results using QWEN.md format
     ↓
@@ -116,83 +161,46 @@ End every iteration with exactly this:
 - [Places future work might break]
 ```
 
-## Example: Good Iteration
-
-**TODO-0.3: Term Monotonicity Tests**
-
-Tests written:
-- TestTermNeverDecreases() - set term to 5, receive term 3, verify term stays 5
-- TestHigherTermForcesFollower() - become leader, get higher-term message, verify become follower
-- TestMultipleConcurrentMessages() - 10 goroutines sending random-term messages, verify no races
-- All pass with `go test -race -count=10`
-
-Implementation:
-- Updated Step() to compare message.Term with node.CurrentTerm
-- If message.Term > node.CurrentTerm: update and step down
-- Already had State field, no new fields needed
-- 8 lines of code added
-
-Files touched:
-- internal/raft/raft.go (8 lines added)
-- internal/raft/raft_test.go (40 lines added)
-
-```
-✅ **What I Worked On**
-- TODO-0.3: Term monotonicity - verify term never decreases
-- Files: internal/raft/raft.go (Step method), internal/raft/raft_test.go
-
-🧪 **Tests**
-- Type: Unit + Concurrency
-- Verify: term only increases or stays same, no data races under concurrent messages
-- 3 unit tests + 1 concurrent test, all pass
-
-📌 **Result**
-- Fully working
-
-⚠️ **Learnings / Issues**
-- Term comparison in Step() is critical - any higher term forces follower state
-- Randomization in concurrent test helps catch race conditions
-- Mutex not needed since no concurrent writes to same Node (tests serialize)
-```
-
-## Key Directories & Files
-
-```
-internal/raft/
-├── raft.go          # Main implementation
-└── raft_test.go     # Tests - create/update this
-
-logs/
-└── iteration-{N}.log  # Your work log
-```
-
-## Useful Commands
-
-```bash
-go build ./...
-go vet ./...
-go test -race ./internal/raft/...
-go test -race -count=10 ./internal/raft/...
-go test -race -v ./internal/raft/...
-
-git status
-git diff
-git commit -m "iteration-{N}: description"
-git push origin master
-```
-
 ## Code Style
 
 - Use table-driven tests for multiple cases
 - Spawn goroutines with `sync.WaitGroup` for concurrency tests
 - Use channels to simulate message queues
-- No inline comments for obvious code
-- Only comment: complex algorithms, non-obvious design choices
+- **NO comments for obvious code** - code is self-documenting
+- **NO commented-out code blocks**
 - Wrap errors with context: `fmt.Errorf("doing x: %w", err)`
+- Clear naming makes code readable without comments
+
+## Example: Comment Deletion
+
+BEFORE (bad):
+```go
+func handleRequestVote(msg Message) {
+    // Check if message term equals current term
+    if msg.Term == n.CurrentTerm {
+        // Grant vote if not already voted
+        if n.VotedFor == -1 || n.VotedFor == msg.From {
+            n.VotedFor = msg.From  // Set vote to candidate
+            voteGranted = true      // Grant the vote
+        }
+    }
+}
+```
+
+AFTER (clean):
+```go
+func handleRequestVote(msg Message) {
+    if msg.Term == n.CurrentTerm && (n.VotedFor == -1 || n.VotedFor == msg.From) {
+        n.VotedFor = msg.From
+        voteGranted = true
+    }
+}
+```
 
 ## Remember
 
 Do the smallest thing that increases confidence in correctness. That is always the right move.
 
-Good luck! 🚀
+**But FIRST: DELETE ALL COMMENTS.**
 
+Good luck! 🚀

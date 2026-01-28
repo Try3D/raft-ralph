@@ -5,6 +5,11 @@ Define what to work on and in what order.
 ## Rules
 
 - Pick exactly one TODO item
+- **BEFORE STARTING: DELETE ALL COMMENTS in files you will modify**
+  - Run: `grep -n "//" internal/raft/*.go`
+  - Delete every inline comment line
+  - Delete every commented-out code line
+  - Verify: no results except doc comments
 - Complete it according to QWEN.md
 - Report results before moving forward
 - Skipping steps is forbidden
