@@ -220,7 +220,6 @@ func (n *Node) TransitionToLeader() {
 func (n *Node) Step(msg Message) {
 	n.mutex.Lock()
 
-	// Check term first and update if needed
 	if msg.Term > n.CurrentTerm {
 		n.CurrentTerm = msg.Term
 		n.VotedFor = -1
@@ -231,7 +230,6 @@ func (n *Node) Step(msg Message) {
 			_ = n.Storage.SaveVote(ctx, n.CurrentTerm, n.VotedFor)
 		}
 	} else if msg.Term < n.CurrentTerm {
-		// For RequestVote messages with lower terms, we can return early
 		if msg.Type == RequestVoteMsg {
 			n.sendRequestVoteResponse(msg, false)
 			n.mutex.Unlock()
@@ -239,7 +237,6 @@ func (n *Node) Step(msg Message) {
 		}
 	}
 
-	// Get log info for RequestVote handling
 	var lastLogIndex, lastLogTerm int
 	if msg.Type == RequestVoteMsg {
 		if len(n.Log) == 0 {
@@ -253,7 +250,6 @@ func (n *Node) Step(msg Message) {
 
 	n.mutex.Unlock()
 
-	// Handle the message without holding the lock
 	switch msg.Type {
 	case RequestVoteMsg:
 		n.handleRequestVoteWithLogInfo(msg, lastLogIndex, lastLogTerm)
@@ -265,7 +261,6 @@ func (n *Node) Step(msg Message) {
 		n.handleAppendEntriesResponse(msg)
 	}
 
-	// Validate state after processing
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 	if !n.State.IsValidState() {
