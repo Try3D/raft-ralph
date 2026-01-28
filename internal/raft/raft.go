@@ -1,8 +1,11 @@
 package raft
 
 import (
+	"context"
 	"encoding/json"
 	"sync"
+
+	"github.com/try3d/raft-ralph/internal/storage"
 )
 
 // MessageType defines the type of message being sent between nodes
@@ -73,12 +76,15 @@ type Node struct {
 	NextIndex  []int // For each server, index of the next log entry to send to that server
 	MatchIndex []int // For each server, highest log entry known to be replicated on server
 
+	// Storage interface for persistence
+	Storage storage.Storage
+
 	// Mutex to protect concurrent access to node state
 	mutex sync.RWMutex
 }
 
 // NewNode creates a new Raft node
-func NewNode(id int) *Node {
+func NewNode(id int, storage storage.Storage) *Node {
 	node := &Node{
 		ID:          id,
 		State:       Follower,
@@ -87,12 +93,13 @@ func NewNode(id int) *Node {
 		Log:         make([]LogEntry, 0),
 		CommitIndex: 0,
 		LastApplied: 0,
+		Storage:     storage,
 	}
 	return node
 }
 
 // NewNodeWithState creates a new Raft node with existing persistent state
-func NewNodeWithState(id int, persistentState PersistentState) *Node {
+func NewNodeWithState(id int, persistentState PersistentState, storage storage.Storage) *Node {
 	return &Node{
 		ID:          id,
 		State:       Follower, // Start as follower after restart
@@ -101,6 +108,7 @@ func NewNodeWithState(id int, persistentState PersistentState) *Node {
 		Log:         make([]LogEntry, 0),
 		CommitIndex: 0,
 		LastApplied: 0,
+		Storage:     storage,
 	}
 }
 
