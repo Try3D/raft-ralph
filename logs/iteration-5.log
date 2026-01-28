@@ -30,3 +30,109 @@ Invariants Maintained:
 
 Next Steps:
 - Move to next TODO item in the list (TODO-1.2: Request Vote RPC Full Behavior)
+--- QWEN OUTPUT START ---
+I'll follow the Ralph Wiggum loop and work on the next TODO from TODO.md. Let me first check what the current TODO is and understand the context.
+
+Based on TODO.md, I need to work on the next uncompleted task. Looking at the list, I can see that TODO-0.3 (Term Monotonicity Tests) is marked as completed, and the next item is TODO-0.4: Vote Persistence Interface. Let me check the current state of the codebase to understand what has been implemented so far.
+
+I can see that there are already files related to vote persistence interface. Let me check the current state of the raft.go file and the vote persistence interface implementation to understand what has been done:
+
+Now I'll check the vote persistence interface test file to see what has been implemented:
+
+Let me also check the other test files to understand the current state:
+
+Based on my review of the code, I can see that TODO-0.4 (Vote Persistence Interface) has already been implemented. The storage interface is defined in `/internal/storage/storage.go` with the required methods, and there are tests for it. 
+
+Looking at the TODO list again, I notice that TODO-0.5 (Vote Granting Logic) appears to be the next item that needs work. Let me check if there are tests for vote granting logic:
+
+I can see that there are already tests for vote granting logic, which means TODO-0.5 may have been completed. Let me check the current state of the TODO list again and look at the next item. According to the TODO list, the next item should be TODO-0.6: File-Based Vote Storage Implementation. Let me check if this has been completed by looking at the implementation and tests:
+
+Looking at the files I've already read, it seems that TODO-0.6 has already been implemented as well. Let me check the next item in the list, which is TODO-1.1: Log Entry Types & Append.
+
+Let me check if there are any log-related implementations already:
+
+Let me check if there are any tests related to log entries and appending:
+
+I can see that the `LogEntry` type is already defined in the raft.go file, but I don't see an `AppendEntry` method or `GetLastLogIndexAndTerm` method. Let me check the next item in the TODO list which is TODO-1.1: Log Entry Types & Append. This seems to be the next item I need to work on.
+
+Let me first check if there are any existing tests for log entries:
+
+It looks like the `AppendEntry` method and `GetLastLogIndexAndTerm` method haven't been implemented yet. So I need to work on TODO-1.1: Log Entry Types & Append. Let me start by implementing these methods and writing the corresponding tests.
+
+First, let me check if there are any existing tests for log functionality:
+
+/Users/rsaran/Projects/raft/internal/raft/raft.go:	LogTerm int
+/Users/rsaran/Projects/raft/internal/raft/raft.go:	LogIndex int
+/Users/rsaran/Projects/raft/internal/raft/raft.go:	Entries []LogEntry
+/Users/rsaran/Projects/raft/internal/raft/raft.go:type LogEntry struct {
+/Users/rsaran/Projects/raft/internal/raft/raft.go:	Log       []LogEntry
+/Users/rsaran/Projects/raft/internal/raft/raft.go:		Log:         make([]LogEntry, 0),
+/Users/rsaran/Projects/raft/internal/raft/raft.go:		Log:         make([]LogEntry, 0),Now I'll implement TODO-1.1: Log Entry Types & Append. I need to:
+1. Implement `AppendEntry()` method - adds entry only if term matches
+2. Implement `GetLastLogIndexAndTerm()` helper
+3. Write tests for these functionalities
+
+First, let me update the raft.go file to add these methods:
+
+Now I need to create a test file for the log entry functionality. Let me create a new test file for log entry tests:
+
+Now let me run the tests to see if my implementation works correctly:
+
+=== RUN   TestLogAppendIncrementsIndex
+--- PASS: TestLogAppendIncrementsIndex (0.00s)
+=== RUN   TestLogTermNeverChanges
+--- PASS: TestLogTermNeverChanges (0.00s)
+=== RUN   TestLogCannotSkipIndices
+--- PASS: TestLogCannotSkipIndices (0.00s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	0.544sGreat! Let me also run the concurrent test:
+
+=== RUN   TestConcurrentAppends
+--- PASS: TestConcurrentAppends (0.00s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	0.147sLet me run the test for appending with wrong term:
+
+=== RUN   TestAppendEntryWithWrongTerm
+--- PASS: TestAppendEntryWithWrongTerm (0.00s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	0.136sPerfect! Now let me run all the tests to make sure I didn't break anything:
+
+ok  	github.com/try3d/raft-ralph/internal/raft	1.399s
+ok  	github.com/try3d/raft-ralph/internal/storage	(cached)Let me also run the tests with the race detector to make sure there are no data races:
+
+ok  	github.com/try3d/raft-ralph/internal/raft	1.165sExcellent! Now let me create an iteration log to document my work:
+
+Now let me commit the changes:
+
+[master 79bb0a1] iteration-5: Implement Log Entry Types & Append functionality with tests
+ 4 files changed, 251 insertions(+)
+ create mode 100644 internal/raft/log_entry_test.go
+ create mode 100644 logs/iteration-5.logTo https://github.com/Try3D/raft-ralph.git
+   a17c4ad..79bb0a1  master -> master✅ **What I Worked On**
+- Implemented TODO-1.1: Log Entry Types & Append functionality
+- Added AppendEntry() method that adds entries only if term matches current term
+- Added GetLastLogIndexAndTerm() helper method
+- Created comprehensive test suite in log_entry_test.go
+
+🧪 **Tests**
+- Unit tests: TestLogAppendIncrementsIndex, TestLogTermNeverChanges, TestLogCannotSkipIndices
+- Concurrency tests: TestConcurrentAppends with 10 goroutines
+- Edge case tests: TestAppendEntryWithWrongTerm
+- All tests pass with race detection enabled (ran 10 times)
+
+📌 **Result**
+- Fully working: All functionality implemented and tested
+- Log indices are contiguous and increment properly
+- Entry terms remain immutable after append
+- Entries with mismatched terms are properly rejected
+- Thread safety ensured with mutex protection
+
+⚠️ **Learnings / Issues**
+- Had to carefully consider thread safety when implementing log operations
+- Used mutex locks to protect shared state during concurrent access
+- The implementation follows Raft's log properties: contiguous indices and immutable terms
+- All existing tests continue to pass, ensuring no regression
+
+The implementation satisfies all requirements in TODO-1.1 and maintains the required invariants.
+
+--- QWEN OUTPUT END ---
