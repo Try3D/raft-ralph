@@ -11,3 +11,158 @@ Worked on TODO-0.5: Vote Granting Logic
 
 All tests pass with race detection enabled.
 Code follows Raft specification for vote granting behavior.
+--- QWEN OUTPUT START ---
+I'll follow the Ralph Wiggum loop and work on the next TODO from the list. Let me first check the current TODO list to understand what needs to be done.
+
+Based on the TODO list, I need to work on the next item in sequence. Looking at the TODO list, I can see that TODO-0.2 (Core Node Types & Methods) appears to be partially implemented already. The next item is TODO-0.3 (Term Monotonicity Tests), which is marked as COMPLETED. 
+
+Let me check if there are any comments in the raft.go file that need to be deleted according to the rules:
+
+Good, there are no inline comments in the raft.go file. Let me check the next TODO item in the list. Since TODO-0.3 is marked as completed, I'll move to TODO-0.4: Vote Persistence Interface. This involves defining the Storage interface and related error types.
+
+Let me first check if there's already a storage implementation:
+
+Let me check the current storage implementation:
+
+I can see that the Storage interface and error types have already been implemented. Let me check the test file to see if there are tests for this:
+
+Now I need to check what the next uncompleted TODO is. Looking at the TODO list, it seems that TODO-0.4 (Vote Persistence Interface) is already implemented. The next item is TODO-0.5 (Vote Granting Logic), which is not marked as completed.
+
+Let me check if there are any tests for vote granting logic in the raft package:
+
+Let me check the vote granting logic tests:
+
+Let me check the term monotonicity tests:
+
+Let me check the main raft test file:
+
+Now I need to work on TODO-0.5: Vote Granting Logic. This involves implementing the proper vote granting rules in the `handleRequestVote` function and writing the corresponding tests. Let me check the current implementation of `handleRequestVote`:
+
+Looking at the code, I can see that the `handleRequestVote` function is already partially implemented, but it doesn't seem to follow the proper Raft vote granting rules. According to Raft specification, a node should grant a vote if:
+1. The request's term is equal to the current term
+2. The node hasn't voted yet in this term OR has already voted for the requesting candidate
+
+Let me also implement the proper logic and add the required tests:
+
+Let me implement the proper vote granting logic in the `handleRequestVote` function:
+
+Now I need to write the tests for vote granting logic as specified in TODO-0.5:
+
+Now I'll create a test file specifically for vote granting logic:
+
+Now let me run the tests to make sure everything works correctly:
+
+=== RUN   TestStartElectionIncrementsTermAndVotesForSelf
+--- PASS: TestStartElectionIncrementsTermAndVotesForSelf (0.00s)
+=== RUN   TestStartElectionTransitionsToCandidate
+--- PASS: TestStartElectionTransitionsToCandidate (0.00s)
+=== RUN   TestStartElectionConcurrent
+--- PASS: TestStartElectionConcurrent (0.00s)
+=== RUN   TestNodeAlwaysInValidState
+--- PASS: TestNodeAlwaysInValidState (0.00s)
+=== RUN   TestStateTransitionsAreExplicit
+--- PASS: TestStateTransitionsAreExplicit (0.00s)
+=== RUN   TestTermNeverDecreases
+--- PASS: TestTermNeverDecreases (0.00s)
+=== RUN   TestHigherTermForcesFollower
+--- PASS: TestHigherTermForcesFollower (0.00s)
+=== RUN   TestTermUpdateWithMessage
+--- PASS: TestTermUpdateWithMessage (0.00s)
+=== RUN   TestMultipleConcurrentMessages
+--- PASS: TestMultipleConcurrentMessages (0.00s)
+=== RUN   TestLowerTermMessageDoesNotChangeTerm
+--- PASS: TestLowerTermMessageDoesNotChangeTerm (0.00s)
+=== RUN   TestSingleVotePerTerm
+    vote_granting_logic_test.go:27: Expected vote to be granted to candidate 2, got 1
+    vote_granting_logic_test.go:42: Expected vote to remain with candidate 2, got 1
+--- FAIL: TestSingleVotePerTerm (0.00s)
+=== RUN   TestVoteResetOnTermIncrease
+    vote_granting_logic_test.go:64: Expected vote to be granted to candidate 2, got 1
+--- FAIL: TestVoteResetOnTermIncrease (0.00s)
+=== RUN   TestVotingDifferentCandidates
+    vote_granting_logic_test.go:105: Expected vote to be granted to candidate 2, got 1
+    vote_granting_logic_test.go:120: Expected vote to remain with candidate 2, got 1
+--- FAIL: TestVotingDifferentCandidates (0.00s)
+=== RUN   TestConcurrentVoteRequests
+--- PASS: TestConcurrentVoteRequests (0.00s)
+=== RUN   TestVoteGrantingRules
+--- PASS: TestVoteGrantingRules (0.00s)
+=== RUN   TestStorageInterfaceDefinition
+--- PASS: TestStorageInterfaceDefinition (0.00s)
+=== RUN   TestStorageErrors
+--- PASS: TestStorageErrors (0.00s)
+FAIL
+FAIL	github.com/try3d/raft-ralph/internal/raft	0.612s
+FAILI see there are some test failures. The issue is that when I call `node.StartElection()`, it sets `VotedFor` to the node's own ID (which is 1), but the tests expect it to be able to vote for candidate 2. Let me look at the `StartElection` method more carefully:
+
+The problem is that `StartElection()` automatically votes for itself, which means the node already has a vote in that term. I need to adjust the tests to account for this behavior. Let me fix the tests:
+
+Now let me run the tests again to see if they pass:
+
+=== RUN   TestStartElectionIncrementsTermAndVotesForSelf
+--- PASS: TestStartElectionIncrementsTermAndVotesForSelf (0.00s)
+=== RUN   TestStartElectionTransitionsToCandidate
+--- PASS: TestStartElectionTransitionsToCandidate (0.00s)
+=== RUN   TestStartElectionConcurrent
+--- PASS: TestStartElectionConcurrent (0.00s)
+=== RUN   TestNodeAlwaysInValidState
+--- PASS: TestNodeAlwaysInValidState (0.00s)
+=== RUN   TestStateTransitionsAreExplicit
+--- PASS: TestStateTransitionsAreExplicit (0.00s)
+=== RUN   TestTermNeverDecreases
+--- PASS: TestTermNeverDecreases (0.00s)
+=== RUN   TestHigherTermForcesFollower
+--- PASS: TestHigherTermForcesFollower (0.00s)
+=== RUN   TestTermUpdateWithMessage
+--- PASS: TestTermUpdateWithMessage (0.00s)
+=== RUN   TestMultipleConcurrentMessages
+--- PASS: TestMultipleConcurrentMessages (0.00s)
+=== RUN   TestLowerTermMessageDoesNotChangeTerm
+--- PASS: TestLowerTermMessageDoesNotChangeTerm (0.00s)
+=== RUN   TestSingleVotePerTerm
+--- PASS: TestSingleVotePerTerm (0.00s)
+=== RUN   TestVoteResetOnTermIncrease
+--- PASS: TestVoteResetOnTermIncrease (0.00s)
+=== RUN   TestVotingDifferentCandidates
+--- PASS: TestVotingDifferentCandidates (0.00s)
+=== RUN   TestConcurrentVoteRequests
+--- PASS: TestConcurrentVoteRequests (0.00s)
+=== RUN   TestVoteGrantingRules
+--- PASS: TestVoteGrantingRules (0.00s)
+=== RUN   TestStorageInterfaceDefinition
+--- PASS: TestStorageInterfaceDefinition (0.00s)
+=== RUN   TestStorageErrors
+--- PASS: TestStorageErrors (0.00s)
+PASS
+ok  	github.com/try3d/raft-ralph/internal/raft	0.418sPerfect! All tests are passing now. Let me also run the race detector to make sure there are no data races:
+
+ok  	github.com/try3d/raft-ralph/internal/raft	1.464sExcellent! All tests pass with the race detector enabled and multiple runs. Let me update the todo status:
+
+Now let me create an iteration log as required:
+
+Now let me commit the changes as required:
+
+[master 88b1beb] iteration-3: Implement vote granting logic with comprehensive tests
+ 4 files changed, 270 insertions(+), 11 deletions(-)
+ create mode 100644 internal/raft/vote_granting_logic_test.goTo https://github.com/Try3D/raft-ralph.git
+   2b7ec78..88b1beb  master -> master✅ **What I Worked On**
+- Implemented proper vote granting logic in handleRequestVote function according to Raft specification
+- Created comprehensive test suite for vote granting behavior (TestSingleVotePerTerm, TestVoteResetOnTermIncrease, TestVotingDifferentCandidates, TestConcurrentVoteRequests, TestVoteGrantingRules)
+- Files modified: internal/raft/raft.go, internal/raft/vote_granting_logic_test.go
+
+🧪 **Tests**
+- Added 5 new tests covering all aspects of vote granting logic
+- Verified single vote per term, vote reset on term increase, prevention of voting for multiple candidates in same term
+- Tested concurrent vote requests with mutex protection to prevent data races
+- All tests pass with race detection enabled (go test -race -count=10)
+
+📌 **Result**
+- Fully working: Vote granting logic implemented according to Raft specification with comprehensive test coverage
+
+⚠️ **Learnings / Issues**
+- Had to adjust tests to account for the fact that StartElection() automatically votes for the node itself
+- Needed to ensure proper synchronization with mutex in concurrent tests
+- The implementation correctly handles the three conditions for granting votes: term equality, no prior vote, or prior vote for same candidate
+- When a higher-term message is received, the node properly updates its term, votes for the candidate, and transitions to follower state
+
+--- QWEN OUTPUT END ---
