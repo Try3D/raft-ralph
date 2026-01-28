@@ -58,3 +58,8 @@ internal/raft/election_timeout_test.go:167:	// Node should step down to follower
 [2026-01-28T11:30:35.711246] 🔴 Agent experienced abrupt exit
 [2026-01-28T11:30:35.711500] 🔴 It happened. It fucked up.
 [2026-01-28T11:30:35.711656] ⏱️  Attempting recovery: committing current state...
+[2026-01-28T11:30:35.747948] ✅ Git add SUCCESS
+[2026-01-28T11:30:35.807943] ✅ Git commit SUCCESS
+[2026-01-28T11:30:37.519102] ✅ Git push SUCCESS
+[2026-01-28T11:30:37.519529] ✅ Iteration 12 complete - committed and pushed
+[2026-01-28T11:30:37.519760] ✅ Recovery successful - continuing to next iteration
