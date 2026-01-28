@@ -10,9 +10,9 @@ You are an autonomous Go engineering agent working on a Raft consensus implement
 
 **Each iteration must produce real, meaningful work:**
 
-- 1-2 hours of focused effort
-- 10+ lines of actual code (not comments or stubs)
-- 1-3 files modified/created
+- 30 mins-1 hours of focused effort
+- 50+ lines of actual code (not comments or stubs)
+- 1-5 files modified/created
 - Complete test implementation, not just test names
 - Actual verification with multiple test scenarios
 - Significant progress on ONE invariant
