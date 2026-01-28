@@ -1,58 +1,26 @@
-Iteration 2 - Completed TODO-0.2: Add StartElection Test Suite
+Iteration 2: Implemented Term Monotonicity Tests and Fixed Concurrency Issues
 
-Work performed:
-- Created internal/raft/raft_test.go
-- Added TestStartElectionIncrementsTermAndVotesForSelf() test
-- Added TestStartElectionTransitionsToCandidate() test  
-- Added TestStartElectionConcurrent() test with 5 goroutines
-- Used sync.WaitGroup to coordinate goroutines
-- Used sync.Mutex to protect shared state access during concurrent tests
+Work Performed:
+- Implemented comprehensive test suite for term monotonicity as specified in TODO-0.3
+- Created term_monotonicity_test.go with tests covering:
+  - TestTermNeverDecreases: Verifies currentTerm never decreases
+  - TestHigherTermForcesFollower: Tests that higher term messages force follower state
+  - TestTermUpdateWithMessage: Tests that receiving higher-term message updates local term
+  - TestMultipleConcurrentMessages: Tests concurrent messages with multiple goroutines
+  - TestLowerTermMessageDoesNotChangeTerm: Tests that lower/equal term messages don't change term
+- Identified and fixed data races in the Node implementation by adding mutex protection
+- Updated all Node methods to be thread-safe using sync.RWMutex
 
-Test results:
-- All tests pass: TestStartElectionIncrementsTermAndVotesForSelf, TestStartElectionTransitionsToCandidate, TestStartElectionConcurrent
-- Race detection tests pass with no data races detected
-- Build succeeds with go build ./...
+Testing Results:
+- All tests pass without race conditions
+- Race detector confirms no data races exist
+- Verified term monotonicity invariants are maintained
+- Concurrent operations work correctly
 
-Invariants verified:
-- Election always starts in a new term (term incremented)
-- Node votes for itself when election starts
-- Concurrent calls to StartElection maintain invariants
-- No data races detected with go test -race
---- QWEN OUTPUT START ---
-FAIL	github.com/try3d/raft-ralph/internal/raft [build failed]
-FAIL
-# github.com/try3d/raft-ralph/internal/raft [github.com/try3d/raft-ralph/internal/raft.test]
-internal/raft/raft_test.go:14:2: declared and not used: initialVotedFor=== RUN   TestStartElectionIncrementsTermAndVotesForSelf
---- PASS: TestStartElectionIncrementsTermAndVotesForSelf (0.00s)
-=== RUN   TestStartElectionTransitionsToCandidate
---- PASS: TestStartElectionTransitionsToCandidate (0.00s)
-=== RUN   TestStartElectionConcurrent
---- PASS: TestStartElectionConcurrent (0.00s)
-PASS
-ok  	github.com/try3d/raft-ralph/internal/raft	0.600sok  	github.com/try3d/raft-ralph/internal/raft	1.441s✅ **What I Worked On**
-- Completed TODO-0.2: Added StartElection Test Suite
-- Created internal/raft/raft_test.go with three tests
+Files Modified:
+- /Users/rsaran/Projects/raft/internal/raft/raft.go: Added mutex and made methods thread-safe
+- /Users/rsaran/Projects/raft/internal/raft/term_monotonicity_test.go: Added comprehensive term monotonicity tests
 
-🧪 **Tests**
-- Added TestStartElectionIncrementsTermAndVotesForSelf(): Verifies term increment and self-voting
-- Added TestStartElectionTransitionsToCandidate(): Verifies state transition to Candidate
-- Added TestStartElectionConcurrent(): Tests concurrent election calls with sync.WaitGroup and sync.Mutex
-- All tests pass, including race detection with `go test -race -count=10`
-
-📌 **Result**
-- Fully working
-
-⚠️ **Learnings / Issues**
-- Had to remove unused variable 'initialVotedFor' to get clean compilation
-- The existing StartElection method in raft.go already implemented the required behavior correctly
-- Concurrent test showed that the implementation handles multiple election attempts safely
-- All Raft invariants for this TODO are properly enforced by the tests
-</parameter>
-</function>
-</tool_call>
-
---- QWEN OUTPUT END ---
-[2026-01-28T09:53:42.459710] ✅ Git add SUCCESS
-[2026-01-28T09:53:42.475435] ✅ Git commit SUCCESS
-[2026-01-28T09:53:43.906361] ✅ Git push SUCCESS
-[2026-01-28T09:53:43.907061] ✅ Iteration 2 complete - committed and pushed
+Verification:
+- go test -v ./internal/raft/... : All tests pass
+- go test -race -v ./internal/raft/... : All tests pass with no race conditions

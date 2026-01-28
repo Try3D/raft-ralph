@@ -1,6 +1,9 @@
 package raft
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sync"
+)
 
 // MessageType defines the type of message being sent between nodes
 type MessageType int
@@ -65,15 +68,18 @@ type Node struct {
 	Log       []LogEntry
 	CommitIndex int
 	LastApplied int
-	
+
 	// For Leaders
 	NextIndex  []int // For each server, index of the next log entry to send to that server
 	MatchIndex []int // For each server, highest log entry known to be replicated on server
+
+	// Mutex to protect concurrent access to node state
+	mutex sync.RWMutex
 }
 
 // NewNode creates a new Raft node
 func NewNode(id int) *Node {
-	return &Node{
+	node := &Node{
 		ID:          id,
 		State:       Follower,
 		CurrentTerm: 0,
@@ -82,6 +88,7 @@ func NewNode(id int) *Node {
 		CommitIndex: 0,
 		LastApplied: 0,
 	}
+	return node
 }
 
 // NewNodeWithState creates a new Raft node with existing persistent state
@@ -99,6 +106,9 @@ func NewNodeWithState(id int, persistentState PersistentState) *Node {
 
 // GetPersistentState returns the current persistent state of the node
 func (n *Node) GetPersistentState() PersistentState {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+
 	return PersistentState{
 		CurrentTerm: n.CurrentTerm,
 		VotedFor:    n.VotedFor,
@@ -130,6 +140,9 @@ func LoadFromStorage(data []byte, id int) (*Node, error) {
 
 // IsValidState checks if the node is in a valid state
 func (n *Node) IsValidState() bool {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+
 	return n.State.IsValidState()
 }
 
@@ -139,12 +152,17 @@ func (n *Node) setState(newState NodeState) {
 		// This should never happen in a correct implementation
 		panic("attempting to set node to invalid state")
 	}
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
 	n.State = newState
 }
 
 // TransitionToFollower transitions the node to follower state
 func (n *Node) TransitionToFollower(term int) {
-	n.setState(Follower)
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	n.State = Follower
 	if term > n.CurrentTerm {
 		n.CurrentTerm = term
 		n.VotedFor = -1
@@ -154,6 +172,9 @@ func (n *Node) TransitionToFollower(term int) {
 // StartElection starts a new election by incrementing the term and voting for self
 // This enforces the invariant that election always starts in a new term
 func (n *Node) StartElection() {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
 	// Increment the term to start a new election
 	n.CurrentTerm++
 
@@ -161,38 +182,47 @@ func (n *Node) StartElection() {
 	n.VotedFor = n.ID
 
 	// Transition to candidate state
-	n.setState(Candidate)
+	n.State = Candidate
 }
 
 // TransitionToCandidate transitions the node to candidate state without starting an election
 // This is used internally when stepping down from leader to candidate
 func (n *Node) TransitionToCandidate() {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
 	if n.State == Leader {
 		// When transitioning from leader to candidate, we should clear leader-specific state
 		// This will be implemented in later TODOs
 	}
-	n.setState(Candidate)
+	n.State = Candidate
 }
 
 // TransitionToLeader transitions the node to leader state
 func (n *Node) TransitionToLeader() {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
 	if n.State != Candidate {
 		// Only candidates can become leaders
 		return
 	}
-	n.setState(Leader)
+	n.State = Leader
 	// Initialize leader-specific state
 	// This will be implemented in later TODOs
 }
 
 // Step applies a message to the node, causing a state transition
 func (n *Node) Step(msg Message) {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
 	// If the message has a higher term, we must step down to follower
 	// This enforces the invariant that no leader or candidate survives a higher term
 	if msg.Term > n.CurrentTerm {
 		n.CurrentTerm = msg.Term
 		n.VotedFor = -1  // Reset vote when term changes
-		n.TransitionToFollower(msg.Term)
+		n.State = Follower
 	} else if msg.Term < n.CurrentTerm {
 		// If the message has a lower term, we may need to respond appropriately
 		// depending on the message type (e.g., reject vote requests with higher term)
@@ -210,13 +240,14 @@ func (n *Node) Step(msg Message) {
 	}
 
 	// Verify that the node is always in a valid state after processing the message
-	if !n.IsValidState() {
+	if !n.State.IsValidState() {
 		panic("node is in an invalid state after processing message")
 	}
 }
 
 // handleRequestVote handles a RequestVote message
 func (n *Node) handleRequestVote(msg Message) {
+	// The Step method already acquired the lock, so we don't need to acquire it again here
 	voteGranted := false
 
 	// A node grants a vote if:
@@ -246,6 +277,7 @@ func (n *Node) handleRequestVote(msg Message) {
 
 // handleAppendEntries handles an AppendEntries message
 func (n *Node) handleAppendEntries(msg Message) {
+	// The Step method already acquired the lock, so we don't need to acquire it again here
 	// For now, stub implementation - we'll implement the actual log replication logic in future TODOs
 	response := Message{
 		Type:        AppendEntriesResponseMsg,
