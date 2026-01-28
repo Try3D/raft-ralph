@@ -248,6 +248,33 @@ func (n *Node) handleRequestVoteResponse(msg Message) {
 func (n *Node) handleAppendEntriesResponse(msg Message) {
 }
 
+func (n *Node) AppendEntry(entry LogEntry) bool {
+	n.mutex.Lock()
+	defer n.mutex.Unlock()
+
+	// Only append if the entry's term matches the current term
+	if entry.Term != n.CurrentTerm {
+		return false
+	}
+
+	// Append the entry to the log
+	n.Log = append(n.Log, entry)
+	return true
+}
+
+func (n *Node) GetLastLogIndexAndTerm() (index, term int) {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+
+	if len(n.Log) == 0 {
+		return -1, -1 // Indicate empty log
+	}
+
+	// Last index is length - 1 (since indices are 0-based)
+	lastIndex := len(n.Log) - 1
+	return lastIndex, n.Log[lastIndex].Term
+}
+
 type MockStorage struct{}
 
 func (m *MockStorage) SaveVote(ctx context.Context, term, votedFor int) error {

@@ -1,0 +1,32 @@
+Iteration 5 - Log Entry Types & Append Implementation
+
+Date: 2026-01-28
+
+Work Completed:
+- Implemented AppendEntry() method that adds entries only if term matches current term
+- Implemented GetLastLogIndexAndTerm() helper method to retrieve the last log index and term
+- Created comprehensive test suite for log functionality:
+  - TestLogAppendIncrementsIndex: Verifies that appending entries increments the log index
+  - TestLogTermNeverChanges: Ensures entry terms are immutable after append
+  - TestLogCannotSkipIndices: Confirms log indices are contiguous
+  - TestConcurrentAppends: Tests concurrent appending with multiple goroutines
+  - TestAppendEntryWithWrongTerm: Validates that entries with wrong terms are rejected
+
+Files Modified:
+- /internal/raft/raft.go: Added AppendEntry() and GetLastLogIndexAndTerm() methods
+- /internal/raft/log_entry_test.go: Created new test file with comprehensive log tests
+
+Testing Results:
+- All tests pass with regular execution
+- All tests pass with race detection enabled
+- Ran tests 10 times with race detection to ensure no data races
+- All existing tests continue to pass
+
+Invariants Maintained:
+- Log indices are contiguous
+- Log entries never reorder
+- Entry term never changes after append
+- Thread safety maintained with mutex protection
+
+Next Steps:
+- Move to next TODO item in the list (TODO-1.2: Request Vote RPC Full Behavior)
